@@ -111,6 +111,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.freeChocolatesCreated = 0;
     this.freeComboCounts = { any: 0, stripeStripe: 0, stripeBomb: 0, bombBomb: 0, chocolateSpecial: 0 };
     this.freeReward = 0;
+    this.freeStartWallet = STARTING_WALLET;
     this.freeOrdersCompleted = 0;
     this.freeScatterRetriggers = 0;
     this.freeEventCount = 0;
@@ -593,7 +594,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.playOrderCompleteSound();
     this.cameras.main.shake(620, 0.016);
 
-    const flash = this.add.rectangle(x, y, W - 12, 42, 0xfff06a, 0.86).setDepth(70);
+    const flash = this.add.rectangle(x, y, W - 12, 42, 0xfff06a, 0.86).setDepth(110);
     flash.isFxSprite = true;
     this.fxSprites.add(flash);
     this.tweens.add({
@@ -606,7 +607,7 @@ class CandyOrdersScene extends Phaser.Scene {
     });
 
     if (reward <= 0) {
-      const key = this.add.image(x, y, "sym-scatter").setDepth(72);
+      const key = this.add.image(x, y, "sym-scatter").setDepth(112);
       key.setScale(28 / Math.max(key.width, key.height));
       key.isFxSprite = true;
       this.fxSprites.add(key);
@@ -624,7 +625,7 @@ class CandyOrdersScene extends Phaser.Scene {
     }
 
     for (let i = 0; i < 32; i++) {
-      const coin = this.add.image(x, y, "fx-coin").setDepth(72);
+      const coin = this.add.image(x, y, "fx-coin").setDepth(112);
       const size = i % 3 === 0 ? 24 : 17;
       coin.setScale(size / Math.max(coin.width, coin.height));
       coin.isFxSprite = true;
@@ -702,7 +703,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.playPopSound(1120);
     const banner = this.add.rectangle(W / 2, 238, W - 46, 48, 0x351352, 0.9)
       .setStrokeStyle(4, 0xfff06a, 0.95)
-      .setDepth(70);
+      .setDepth(120);
     banner.isFxSprite = true;
     this.fxSprites.add(banner);
     const label = this.add.text(W / 2, 238, "75%  ORDER READY SOON", {
@@ -711,7 +712,7 @@ class CandyOrdersScene extends Phaser.Scene {
       color: "#fff06a",
       stroke: "#7a2d93",
       strokeThickness: 6
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(121);
     label.isFxSprite = true;
     this.fxSprites.add(label);
     banner.setScale(0.7);
@@ -746,7 +747,7 @@ class CandyOrdersScene extends Phaser.Scene {
     const totalMult = coinCompletions.reduce((sum, item) => sum + item.rollMult, 0);
     const rangeMin = coinCompletions.reduce((sum, item) => sum + item.range.min, 0);
     const rangeMax = coinCompletions.reduce((sum, item) => sum + item.range.max, 0);
-    const summaryDepth = 74;
+    const summaryDepth = 120;
     const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x16091f, 0.56).setDepth(summaryDepth);
     const panel = this.add.rectangle(W / 2, 430, W - 44, 224, 0x4a1a6b, 0.97).setStrokeStyle(6, 0xfff06a, 1).setDepth(summaryDepth + 1);
     const topLine = this.add.rectangle(W / 2, 330, W - 84, 7, 0x8ee8ff, 1).setDepth(summaryDepth + 2);
@@ -1967,33 +1968,9 @@ class CandyOrdersScene extends Phaser.Scene {
     return { min: Math.max(1, median - spread), median, max: median + spread };
   }
 
-  pickWeightedBand(bands) {
-    if (!Array.isArray(bands) || !bands.length) return null;
-    const total = bands.reduce((sum, band) => sum + Number(band.weight || 0), 0);
-    let roll = Math.random() * Math.max(total, 0.000001);
-    for (const band of bands) {
-      roll -= Number(band.weight || 0);
-      if (roll <= 0) return band;
-    }
-    return bands[bands.length - 1];
-  }
-
   rollOrderMult(order) {
     const range = this.multRange(order.mult, order.scope === "free" ? "free" : "main");
-    if (order.scope !== "free") {
-      const band = this.pickWeightedBand(MATH_CONFIG.mainOrderPayoutBands);
-      if (band) {
-        const span = range.max - range.min;
-        const low = Math.round(range.min + span * Number(band.minPosition || 0));
-        const high = Math.round(range.min + span * Number(band.maxPosition || 0));
-        return { range, mult: Phaser.Math.Between(low, Math.max(low, high)) };
-      }
-    }
     return { range, mult: Phaser.Math.Between(range.min, range.max) };
-  }
-
-  rollMainLuckyMult() {
-    return Number(this.pickWeightedBand(MATH_CONFIG.mainLuckyWinBands)?.mult || 0);
   }
 
   rollBandValue(bands, fallback = 1) {
@@ -2048,6 +2025,8 @@ class CandyOrdersScene extends Phaser.Scene {
     const template = Phaser.Utils.Array.GetRandom(MATH_CONFIG.mainOrderPools[tierIndex]);
     const spec = { ...template };
     spec.need = this.rollMainOrderNeed(spec.need);
+    const effortScale = Math.max(0.8, Math.pow(spec.need / Math.max(1, template.need), 0.65));
+    spec.mult = Math.max(1, Math.round(template.mult * effortScale));
     if (spec.kind === "color") spec.type = TYPES[spec.typeIndex];
     delete spec.typeIndex;
     const order = { tier, rewardType: this.chooseMainRewardType(tier), ...spec };
@@ -2104,18 +2083,40 @@ class CandyOrdersScene extends Phaser.Scene {
     return { type: Phaser.Utils.Array.GetRandom(TYPES), special: null };
   }
 
-  refillSuppressionRate() {
-    const minRate = Number(MATH_CONFIG.refillMatchSuppressionMinRate || 0);
-    if (this.gameMode === "free") return minRate;
+  refillEfficiencyNormalized() {
     const floor = Number(MATH_CONFIG.refillEfficiencyFloor || 0);
     const ceiling = Number(MATH_CONFIG.refillEfficiencyCeiling || floor + 1);
     const efficiency = this.paidMovesMade > 0 ? this.totalRemoved / this.paidMovesMade : floor;
-    const normalized = Phaser.Math.Clamp((efficiency - floor) / Math.max(0.01, ceiling - floor), 0, 1);
-    const maxRate = Number(MATH_CONFIG.refillMatchSuppressionMaxRate || minRate);
+    return Phaser.Math.Clamp((efficiency - floor) / Math.max(0.01, ceiling - floor), 0, 1);
+  }
+
+  refillSuppressionRate() {
+    const minRate = Number(MATH_CONFIG.refillMatchSuppressionMinRate || 0);
+    const normalized = this.refillEfficiencyNormalized();
+    const maxRate = this.gameMode === "free"
+      ? Number(MATH_CONFIG.freeRefillMatchSuppressionMaxRate || minRate)
+      : Number(MATH_CONFIG.refillMatchSuppressionMaxRate || minRate);
     return minRate + (maxRate - minRate) * normalized;
   }
 
+  refillAssistanceRate() {
+    const maxRate = this.gameMode === "free"
+      ? Number(MATH_CONFIG.freeRefillMatchAssistMaxRate || 0)
+      : Number(MATH_CONFIG.refillMatchAssistMaxRate || 0);
+    return maxRate * (1 - this.refillEfficiencyNormalized());
+  }
+
   randomRefillTile(board, r, c) {
+    const matchCandidates = [];
+    const addMatchCandidate = (a, b) => {
+      if (!a || !b || a.scatter || b.scatter || a.special || b.special || a.type !== b.type) return;
+      if (!matchCandidates.includes(a.type)) matchCandidates.push(a.type);
+    };
+    if (r + 2 < this.rows) addMatchCandidate(board[r + 1]?.[c], board[r + 2]?.[c]);
+    if (c >= 2) addMatchCandidate(board[r]?.[c - 1], board[r]?.[c - 2]);
+    if (matchCandidates.length && Math.random() < this.refillAssistanceRate()) {
+      return { type: Phaser.Utils.Array.GetRandom(matchCandidates), special: null };
+    }
     if (Math.random() >= this.refillSuppressionRate()) return this.randomTile();
     const blocked = new Set();
     const blocksType = (a, b) => {
@@ -2139,7 +2140,7 @@ class CandyOrdersScene extends Phaser.Scene {
     if (!a || !b || a.chest || b.chest) return false;
     this.board[r1][c1] = b;
     this.board[r2][c2] = a;
-    const legal = a.special || b.special || this.findMatches().length > 0;
+    const legal = (!!a.special && !!b.special) || this.findMatches().length > 0;
     this.board[r1][c1] = a;
     this.board[r2][c2] = b;
     return legal;
@@ -2213,7 +2214,8 @@ class CandyOrdersScene extends Phaser.Scene {
   async showShuffleFx() {
     this.statusText.setText("No moves. Refreshing board...");
     const veil = this.add.rectangle(W / 2, this.boardY + (this.rows * this.cell) / 2, this.cell * COLS + 28, this.cell * this.rows + 28, 0x42f5ff, 0.1)
-      .setStrokeStyle(4, 0xfff06a, 0.85);
+      .setStrokeStyle(4, 0xfff06a, 0.85)
+      .setDepth(43);
     veil.isFxSprite = true;
     this.fxSprites.add(veil);
     const label = this.add.text(W / 2, this.boardY + (this.rows * this.cell) / 2, "RESHUFFLE", {
@@ -2222,7 +2224,7 @@ class CandyOrdersScene extends Phaser.Scene {
       color: "#fff6a8",
       stroke: "#351352",
       strokeThickness: 6
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(44);
     label.isFxSprite = true;
     this.fxSprites.add(label);
     this.playUnlockSound();
@@ -2387,6 +2389,9 @@ class CandyOrdersScene extends Phaser.Scene {
     this.renderBoard(true);
     this.updateOrders();
     this.updateKeyUi();
+    if (this.walletCounterTween) this.walletCounterTween.stop();
+    this.walletCounterTween = null;
+    this.displayedWallet = this.wallet;
     this.updateBetUi();
     this.setMode(isFree ? "free" : "game");
     this.statusText.setText("Board recovered. Try another move.");
@@ -2451,9 +2456,10 @@ class CandyOrdersScene extends Phaser.Scene {
     await this.wait(210);
 
     const specialSwap = a.special || b.special;
+    const doubleSpecialSwap = !!a.special && !!b.special;
     const matchesAfterSwap = this.findMatches();
     const oneSpecialOneNormal = (a.special && !b.special) || (!a.special && b.special);
-    if (!specialSwap && matchesAfterSwap.length === 0) {
+    if (!doubleSpecialSwap && matchesAfterSwap.length === 0) {
       this.board[r1][c1] = a;
       this.board[r2][c2] = b;
       this.sprites[r1][c1] = spriteA;
@@ -2491,11 +2497,8 @@ class CandyOrdersScene extends Phaser.Scene {
     if (oneSpecialOneNormal) {
       const normalMovedPos = a.special ? [r1, c1] : [r2, c2];
       const specialMovedPos = a.special ? [r2, c2] : [r1, c1];
-      const normalMatches = matchesAfterSwap.filter((group) =>
-        group.cells.some(([r, c]) => r === normalMovedPos[0] && c === normalMovedPos[1])
-      );
-      if (normalMatches.length > 0) {
-        const createdSpecials = await this.resolveMatches(normalMatches, {
+      if (matchesAfterSwap.length > 0) {
+        const createdSpecials = await this.resolveMatches(matchesAfterSwap, {
           preferredCreatePositions: [normalMovedPos],
           protectedPositions: [specialMovedPos],
           skipSpecialExpansion: true
@@ -2666,16 +2669,23 @@ class CandyOrdersScene extends Phaser.Scene {
         const tile = this.board[r]?.[c];
         return tile?.special ? { r, c, special: tile.special } : null;
       }).filter(Boolean);
-    let played = 0;
+    const queued = [];
+    const seen = new Set();
     for (const event of events) {
       const key = `${event.r},${event.c}`;
-      if (skip.has(key)) continue;
+      if (skip.has(key) || seen.has(key)) continue;
       const tile = this.board[event.r]?.[event.c];
       if (!tile?.special || tile.chest) continue;
-      if (tile.special === "chocolate") await this.playChocolateFx(event.r, event.c, event.color || this.randomTransformColor());
-      else await this.playSpecialActivationFx({ ...tile, special: event.special || tile.special }, [event.r, event.c], tile);
-      played += 1;
-      if (played >= 12) break;
+      seen.add(key);
+      queued.push({ event: { ...event }, tile: { ...tile } });
+    }
+    for (let index = 0; index < queued.length; index += 4) {
+      await Promise.all(queued.slice(index, index + 4).map(({ event, tile }) => {
+        if (tile.special === "chocolate") {
+          return this.playChocolateFx(event.r, event.c, event.color || this.randomTransformColor());
+        }
+        return this.playSpecialActivationFx({ ...tile, special: event.special || tile.special }, [event.r, event.c], tile);
+      }));
     }
   }
 
@@ -3112,6 +3122,46 @@ class CandyOrdersScene extends Phaser.Scene {
     if (this.keyHudText) this.keyHudText.setText(`${this.countScatters()}/${this.scatterGoal}`);
   }
 
+  async showFreeRetriggerCard() {
+    const group = this.add.group();
+    const centerY = this.boardY + this.cell * this.rows * 0.48;
+    const veil = this.add.rectangle(W / 2, centerY, W, 190, 0x2b0818, 0.76).setDepth(130);
+    const plate = this.add.rectangle(W / 2, centerY, W - 54, 132, 0xa51d55, 0.98)
+      .setStrokeStyle(6, 0xfff06a, 1)
+      .setDepth(131)
+      .setScale(0.72);
+    const chest = this.add.image(W / 2, centerY - 62, "sym-scatter").setDepth(133);
+    chest.setScale(72 / Math.max(chest.width, chest.height));
+    const title = this.add.text(W / 2, centerY - 12, "RETRIGGER!", {
+      fontSize: 38,
+      fontStyle: "900",
+      color: "#ffffff",
+      stroke: "#4a1028",
+      strokeThickness: 9
+    }).setOrigin(0.5).setDepth(133);
+    const moves = this.add.text(W / 2, centerY + 42, `+${MATH_CONFIG.bonusRetriggerMoves} MOVES`, {
+      fontSize: 31,
+      fontStyle: "900",
+      color: "#fff06a",
+      stroke: "#4a1028",
+      strokeThickness: 8
+    }).setOrigin(0.5).setDepth(133);
+    group.addMultiple([veil, plate, chest, title, moves]);
+    [chest, title, moves].forEach((item) => {
+      const scaleX = item.scaleX;
+      const scaleY = item.scaleY;
+      item.setAlpha(0).setScale(scaleX * 0.65, scaleY * 0.65);
+      this.tweens.add({ targets: item, alpha: 1, scaleX, scaleY, duration: 360, ease: "Back.Out" });
+    });
+    this.tweens.add({ targets: plate, scale: 1, duration: 240, ease: "Back.Out" });
+    this.cameras.main.flash(420, 255, 232, 96);
+    await this.wait(1350);
+    const items = [...group.getChildren()];
+    this.tweens.add({ targets: items, alpha: 0, y: "-=18", duration: 260, ease: "Cubic.In" });
+    await this.wait(280);
+    this.destroyTempGroup(group);
+  }
+
   async collectBonusScatterRetrigger() {
     const positions = this.scatterPositions(this.scatterGoal);
     const maxRetriggers = Number(MATH_CONFIG.maxBonusRetriggers || Infinity);
@@ -3124,6 +3174,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.time.delayedCall(120, () => this.playPopSound(1480));
     this.cameras.main.flash(420, 255, 240, 106);
     this.cameras.main.shake(420, 0.012);
+    await this.showFreeRetriggerCard();
     positions.forEach(([r, c], index) => {
       const x = this.cellX(c);
       const y = this.cellY(r);
@@ -3144,17 +3195,6 @@ class CandyOrdersScene extends Phaser.Scene {
         });
       }
     });
-    const label = this.add.text(W / 2, 226, `+${MATH_CONFIG.bonusRetriggerMoves} FREE MOVES`, {
-      fontFamily: "Arial Black",
-      fontSize: "26px",
-      color: "#fff6a8",
-      stroke: "#351352",
-      strokeThickness: 6
-    }).setDepth(36).setOrigin(0.5).setAlpha(0);
-    label.isFxSprite = true;
-    this.fxSprites.add(label);
-    this.tweens.add({ targets: label, alpha: 1, scale: 1.14, duration: 180, yoyo: true, repeat: 1, ease: "Back.Out" });
-    this.tweens.add({ targets: label, y: 190, alpha: 0, delay: 760, duration: 520, ease: "Cubic.In", onComplete: () => this.destroyFx(label) });
     await this.wait(520);
     positions.forEach(([r, c]) => {
       const sprite = this.sprites[r]?.[c];
@@ -3171,7 +3211,9 @@ class CandyOrdersScene extends Phaser.Scene {
     let triggered = false;
     let guard = 0;
     while (this.countScatters() >= this.scatterGoal && guard < 3) {
-      triggered = await this.collectBonusScatterRetrigger() || triggered;
+      const collected = await this.collectBonusScatterRetrigger();
+      if (!collected) break;
+      triggered = true;
       await this.resolveAll();
       guard += 1;
     }
@@ -3843,19 +3885,23 @@ class CandyOrdersScene extends Phaser.Scene {
 
   async showFreeEndCard() {
     const group = this.add.group();
-    const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x250712, 0.78).setDepth(80);
-    const panel = this.add.rectangle(W / 2, H / 2, 330, 270, 0x7b1828, 0.98).setStrokeStyle(5, 0xffe277, 1).setDepth(81);
+    const depth = 140;
+    const creditedToWallet = Math.max(0, this.wallet - this.freeStartWallet);
+    const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x250712, 0.82).setDepth(depth);
+    const panel = this.add.rectangle(W / 2, H / 2, 344, 310, 0x7b1828, 0.99).setStrokeStyle(6, 0xffe277, 1).setDepth(depth + 1);
     const title = this.add.text(W / 2, H / 2 - 72, "FREE GAME END", {
       fontSize: 33,
       fontStyle: "900",
       color: "#fff06a",
       stroke: "#351352",
       strokeThickness: 7
-    }).setOrigin(0.5).setDepth(82);
+    }).setOrigin(0.5).setDepth(depth + 2);
     const body = this.add.text(W / 2, H / 2 + 8, [
       `Bonus orders completed: ${this.freeOrdersCompleted}`,
       `Removed in bonus: ${this.freeRemoved}`,
-      `Bonus win: ${this.freeReward}`
+      `Bonus win: ${this.freeReward}`,
+      `Paid to wallet: +${creditedToWallet}`,
+      `Wallet: ${this.wallet}`
     ].join("\n"), {
       fontSize: 18,
       fontStyle: "900",
@@ -3864,18 +3910,18 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#351352",
       strokeThickness: 5,
       lineSpacing: 9
-    }).setOrigin(0.5).setDepth(82);
-    const next = this.add.text(W / 2, H / 2 + 96, "BACK TO ORDERS", {
+    }).setOrigin(0.5).setDepth(depth + 2);
+    const next = this.add.text(W / 2, H / 2 + 126, "BACK TO ORDERS", {
       fontSize: 18,
       fontStyle: "900",
       color: "#8ee8ff",
       stroke: "#061b30",
       strokeThickness: 5
-    }).setOrigin(0.5).setDepth(82);
+    }).setOrigin(0.5).setDepth(depth + 2);
     group.addMultiple([veil, panel, title, body, next]);
     this.playCoinSpraySound();
     this.tweens.add({ targets: [title, body, next], scale: 1.08, duration: 200, yoyo: true, repeat: 1, ease: "Back.Out" });
-    await this.wait(2600);
+    await this.wait(3200);
     const children = [...group.getChildren()];
     this.tweens.add({ targets: children, alpha: 0, duration: 280, ease: "Cubic.In" });
     await this.wait(300);
@@ -3890,63 +3936,6 @@ class CandyOrdersScene extends Phaser.Scene {
       child.destroy();
     });
     group.destroy();
-  }
-
-  async showMainLuckyWin(mult, reward) {
-    const depth = 76;
-    const y = this.boardY + this.cell * this.rows * 0.48;
-    const panel = this.add.rectangle(W / 2, y, 258, 104, 0x5a1734, 0.96)
-      .setStrokeStyle(5, 0xfff06a, 1)
-      .setDepth(depth)
-      .setScale(0.7)
-      .setAlpha(0);
-    const title = this.add.text(W / 2, y - 26, "LUCKY WIN", {
-      fontSize: 24,
-      fontStyle: "900",
-      color: "#ffffff",
-      stroke: "#8d174f",
-      strokeThickness: 6
-    }).setOrigin(0.5).setDepth(depth + 1).setAlpha(0);
-    const value = this.add.text(W / 2, y + 18, `+${mult}x  +${reward}`, {
-      fontSize: 34,
-      fontStyle: "900",
-      color: "#fff06a",
-      stroke: "#5a1734",
-      strokeThickness: 7
-    }).setOrigin(0.5).setDepth(depth + 1).setScale(0.55).setAlpha(0);
-    const items = [panel, title, value];
-    items.forEach((item) => {
-      item.isFxSprite = true;
-      this.fxSprites.add(item);
-    });
-    this.tweens.add({ targets: panel, alpha: 1, scale: 1, duration: 220, ease: "Back.Out" });
-    this.tweens.add({ targets: [title, value], alpha: 1, scale: 1, duration: 320, ease: "Back.Out" });
-    this.playCoinDing();
-    this.time.delayedCall(120, () => this.playPopSound(mult >= 10 ? 1680 : 1320));
-    this.cameras.main.flash(mult >= 10 ? 260 : 150, 255, 236, 106);
-    await this.wait(mult >= 10 ? 1250 : 900);
-    this.tweens.add({ targets: items, alpha: 0, y: "-=18", duration: 260, ease: "Cubic.In" });
-    await this.wait(280);
-    items.forEach((item) => this.destroyFx(item));
-  }
-
-  async awardMainLuckyWin() {
-    if (this.gameMode === "free") return 0;
-    const mult = this.rollMainLuckyMult();
-    if (mult <= 0) return 0;
-    const moveCap = Math.max(0, Number(MATH_CONFIG.maxPaidMoveWinMult || Infinity) * this.betAmount);
-    const reward = Math.min(Math.round(mult * this.betAmount), Math.max(0, moveCap - this.moveReward));
-    if (reward <= 0) return 0;
-    this.wallet += reward;
-    this.sessionReward += reward;
-    this.moveReward += reward;
-    this.animateWalletMeter(reward);
-    this.animateWinMeter(reward);
-    this.updateBetUi();
-    this.winText.setText(`LUCKY WIN +${reward}`);
-    this.statusText.setText(`Lucky payout ${mult}x`);
-    await this.showMainLuckyWin(mult, reward);
-    return reward;
   }
 
   async finishMove() {
@@ -3969,10 +3958,10 @@ class CandyOrdersScene extends Phaser.Scene {
       await this.wait(720);
     } else {
       this.winText.setText(`EARNED ${this.sessionReward}`);
-      this.statusText.setText("Keep solving orders.");
+      const scattersNeeded = Math.max(0, this.scatterGoal - this.countScatters());
+      this.statusText.setText(`${scattersNeeded} scatter${scattersNeeded === 1 ? "" : "s"} to Free Game.`);
       await this.wait(180);
     }
-    await this.awardMainLuckyWin();
     if (this.bonusPending) {
       this.bonusPending = false;
       await this.startFreeGame();
@@ -4034,6 +4023,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.freeChocolatesCreated = 0;
     this.freeComboCounts = { any: 0, stripeStripe: 0, stripeBomb: 0, bombBomb: 0, chocolateSpecial: 0 };
     this.freeReward = 0;
+    this.freeStartWallet = this.wallet;
     this.freeOrdersCompleted = 0;
     this.freeScatterRetriggers = 0;
     this.freeEventCount = 0;
@@ -4085,6 +4075,9 @@ class CandyOrdersScene extends Phaser.Scene {
     this.renderBoard(true);
     this.updateOrders();
     this.updateKeyUi();
+    if (this.walletCounterTween) this.walletCounterTween.stop();
+    this.walletCounterTween = null;
+    this.displayedWallet = this.wallet;
     this.updateBetUi();
     this.setMode("game");
     this.startCuteMusic();
@@ -4121,12 +4114,12 @@ class CandyOrdersScene extends Phaser.Scene {
         const bonusCap = Number(MATH_CONFIG.maxBonusWinMult || Infinity) * this.betAmount;
         orderReward = Math.min(orderReward, Math.max(0, bonusCap - this.freeReward));
       }
-      const keyGain = 0;
       reward += orderReward;
-      this.ordersCompleted += 1;
       if (isFreeOrder) {
         this.freeOrdersCompleted += 1;
         this.freeReward += orderReward;
+      } else {
+        this.ordersCompleted += 1;
       }
       if (paysScatter && this.grantScatterRewardFx(index)) scatterGranted = true;
       this.moveCompletions.push({
@@ -4141,8 +4134,8 @@ class CandyOrdersScene extends Phaser.Scene {
       });
       this.showOrderCompleteFx(index, order, orderReward);
       
-      if (isFreeOrder) return { ...order, completed: true };
       refreshedOrders += 1;
+      if (isFreeOrder) return this.createFreeOrder(order.tier);
       return this.createOrder(order.tier);
     });
     if (scatterGranted) this.checkScatterBonus();
