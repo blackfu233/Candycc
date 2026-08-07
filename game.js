@@ -1958,9 +1958,19 @@ class CandyOrdersScene extends Phaser.Scene {
     return Math.max(1, Math.round(mult * this.payoutScale()));
   }
 
-  multRange(mult, scope = null) {
+  multRange(mult, scope = null, tier = null) {
     const median = this.effectiveMult(mult);
     const isFree = scope === "free" || (scope === null && this.gameMode === "free");
+    const easyBands = !isFree && tier === "Easy" ? MATH_CONFIG.mainEasyOrderPayoutBands : null;
+    if (Array.isArray(easyBands) && easyBands.length) {
+      const minFactor = Math.min(...easyBands.map((band) => Number(band.min ?? 1)));
+      const maxFactor = Math.max(...easyBands.map((band) => Number(band.max ?? band.min ?? 1)));
+      return {
+        min: Math.max(1, Math.round(median * minFactor)),
+        median,
+        max: Math.max(1, Math.round(median * maxFactor))
+      };
+    }
     const spreadRate = isFree
       ? Number(MATH_CONFIG.freeOrderMultiplierSpread ?? MATH_CONFIG.orderMultiplierSpread)
       : Number(MATH_CONFIG.mainOrderMultiplierSpread ?? MATH_CONFIG.orderMultiplierSpread);
@@ -1969,7 +1979,35 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   rollOrderMult(order) {
-    const range = this.multRange(order.mult, order.scope === "free" ? "free" : "main");
+    const scope = order.scope === "free" ? "free" : "main";
+    const range = this.multRange(order.mult, scope, order.tier);
+    const freeBands = scope === "free" ? MATH_CONFIG.freeOrderPayoutBands : null;
+    if (Array.isArray(freeBands) && freeBands.length) {
+      const total = freeBands.reduce((sum, band) => sum + Number(band.weight || 0), 0);
+      let selector = Math.random() * Math.max(total, 0.000001);
+      let selected = freeBands[freeBands.length - 1];
+      for (const band of freeBands) {
+        selector -= Number(band.weight || 0);
+        if (selector <= 0) { selected = band; break; }
+      }
+      const span = range.max - range.min;
+      const low = Math.round(range.min + span * Number(selected.minPosition || 0));
+      const high = Math.round(range.min + span * Number(selected.maxPosition ?? selected.minPosition ?? 1));
+      return { range, mult: Phaser.Math.Between(low, Math.max(low, high)) };
+    }
+    const bands = scope === "main" && order.tier === "Easy" ? MATH_CONFIG.mainEasyOrderPayoutBands : null;
+    if (Array.isArray(bands) && bands.length) {
+      const total = bands.reduce((sum, band) => sum + Number(band.weight || 0), 0);
+      let selector = Math.random() * Math.max(total, 0.000001);
+      let selected = bands[bands.length - 1];
+      for (const band of bands) {
+        selector -= Number(band.weight || 0);
+        if (selector <= 0) { selected = band; break; }
+      }
+      const low = Math.max(range.min, Math.round(range.median * Number(selected.min ?? 1)));
+      const high = Math.min(range.max, Math.max(low, Math.round(range.median * Number(selected.max ?? selected.min ?? 1))));
+      return { range, mult: Phaser.Math.Between(low, high) };
+    }
     return { range, mult: Phaser.Math.Between(range.min, range.max) };
   }
 
@@ -3587,7 +3625,7 @@ class CandyOrdersScene extends Phaser.Scene {
         row.rewardPlate.setDisplaySize(order.scope === "free" ? 82 : 82, 23);
         row.rewardPlate.setFillStyle(order.scope === "free" && order.gold ? 0xfff06a : 0xfff4b8, 0.96);
       }
-      const range = this.multRange(order.mult, order.scope === "free" ? "free" : "main");
+      const range = this.multRange(order.mult, order.scope === "free" ? "free" : "main", order.tier);
       const shownRange = order.scope === "free" && order.gold
         ? {
           min: Math.max(1, Math.round(range.min * (order.goldMult || 1.5))),

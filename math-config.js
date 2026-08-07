@@ -36,11 +36,22 @@
       { weight: 0.65, min: 0.80, max: 1.20 },
       { weight: 0.15, min: 1.50, max: 2.40 }
     ],
+    mainEasyOrderPayoutBands: [
+      { weight: 0.82, min: 0.34, max: 1.00 },
+      { weight: 0.12, min: 1.25, max: 2.50 },
+      { weight: 0.05, min: 4.00, max: 8.00 },
+      { weight: 0.01, min: 10.00, max: 20.00 }
+    ],
+    freeOrderPayoutBands: [
+      { weight: 0.75, minPosition: 0.00, maxPosition: 0.33 },
+      { weight: 0.20, minPosition: 0.33, maxPosition: 0.67 },
+      { weight: 0.05, minPosition: 0.67, maxPosition: 1.00 }
+    ],
     bonusGoldMultiplierBands: [
-      { weight: 0.9110, min: 1.02, max: 1.15 },
-      { weight: 0.0725, min: 2.00, max: 4.00 },
-      { weight: 0.0150, min: 8.00, max: 20.00 },
-      { weight: 0.0015, min: 180.00, max: 500.00 }
+      { weight: 0.9703, min: 1.02, max: 1.10 },
+      { weight: 0.0200, min: 2.00, max: 4.00 },
+      { weight: 0.0090, min: 8.00, max: 20.00 },
+      { weight: 0.0007, min: 180.00, max: 500.00 }
     ],
     mainRewardWeights: [
       { coins: 0.70, scatter: 0.29 },
@@ -61,13 +72,13 @@
         { kind: "cascade", need: 16, mult: 9 }
       ],
       [
-        { kind: "color", typeIndex: 0, need: 120, mult: 30 },
-        { kind: "color", typeIndex: 1, need: 120, mult: 30 },
-        { kind: "color", typeIndex: 2, need: 120, mult: 30 },
-        { kind: "color", typeIndex: 3, need: 120, mult: 30 },
-        { kind: "color", typeIndex: 4, need: 120, mult: 30 },
-        { kind: "any", need: 550, mult: 30 },
-        { kind: "cascade", need: 40, mult: 30 }
+        { kind: "color", typeIndex: 0, need: 120, mult: 31 },
+        { kind: "color", typeIndex: 1, need: 120, mult: 31 },
+        { kind: "color", typeIndex: 2, need: 120, mult: 31 },
+        { kind: "color", typeIndex: 3, need: 120, mult: 31 },
+        { kind: "color", typeIndex: 4, need: 120, mult: 31 },
+        { kind: "any", need: 550, mult: 31 },
+        { kind: "cascade", need: 40, mult: 31 }
       ]
     ],
     freeOrderPools: [
