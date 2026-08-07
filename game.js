@@ -2144,7 +2144,17 @@ class CandyOrdersScene extends Phaser.Scene {
     return maxRate * (1 - this.refillEfficiencyNormalized());
   }
 
-  randomRefillTile(board, r, c) {
+  createRefillAssistContext() {
+    const configuredLimit = this.gameMode === "free"
+      ? Number(MATH_CONFIG.freeRefillMatchAssistMaxPerMove || 0)
+      : Number(MATH_CONFIG.refillMatchAssistMaxPerMove || 0);
+    return {
+      remaining: Math.max(0, Math.floor(configuredLimit)),
+      types: new Set()
+    };
+  }
+
+  randomRefillTile(board, r, c, assistContext = null) {
     const matchCandidates = [];
     const addMatchCandidate = (a, b) => {
       if (!a || !b || a.scatter || b.scatter || a.special || b.special || a.type !== b.type) return;
@@ -2152,8 +2162,18 @@ class CandyOrdersScene extends Phaser.Scene {
     };
     if (r + 2 < this.rows) addMatchCandidate(board[r + 1]?.[c], board[r + 2]?.[c]);
     if (c >= 2) addMatchCandidate(board[r]?.[c - 1], board[r]?.[c - 2]);
-    if (matchCandidates.length && Math.random() < this.refillAssistanceRate()) {
-      return { type: Phaser.Utils.Array.GetRandom(matchCandidates), special: null };
+    const assistedTypes = assistContext?.types || null;
+    const eligibleAssistTypes = assistedTypes
+      ? matchCandidates.filter((type) => !assistedTypes.has(type))
+      : matchCandidates;
+    const canAssist = !assistContext || assistContext.remaining > 0;
+    if (canAssist && eligibleAssistTypes.length && Math.random() < this.refillAssistanceRate()) {
+      const type = Phaser.Utils.Array.GetRandom(eligibleAssistTypes);
+      if (assistContext) {
+        assistContext.remaining -= 1;
+        assistContext.types.add(type);
+      }
+      return { type, special: null };
     }
     if (Math.random() >= this.refillSuppressionRate()) return this.randomTile();
     const blocked = new Set();
@@ -2527,6 +2547,7 @@ class CandyOrdersScene extends Phaser.Scene {
     if (!inFreeGame) this.paidMovesMade += 1;
     this.moveReward = 0;
     this.moveCompletions = [];
+    this.refillAssistContext = this.createRefillAssistContext();
     this.updateBetUi();
     this.updateFreeUi();
     this.statusText.setText(inFreeGame ? "Free move resolving..." : "Resolving...");
@@ -3053,6 +3074,7 @@ class CandyOrdersScene extends Phaser.Scene {
     const locked = new Set(lockedPositions.map(([r, c]) => `${r},${c}`));
     const nextBoard = Array.from({ length: this.rows }, () => Array(COLS).fill(null));
     const nextSprites = Array.from({ length: this.rows }, () => Array(COLS).fill(null));
+    const refillAssistContext = this.refillAssistContext || this.createRefillAssistContext();
     let totalSpawnSlots = 0;
     for (let c = 0; c < COLS; c++) {
       let lockedCount = 0;
@@ -3095,7 +3117,7 @@ class CandyOrdersScene extends Phaser.Scene {
         const spawnScatter = globalSpawnIndex === scatterSpawnOrdinal;
         const tile = spawnScatter
           ? { type: "scatter", special: null, scatter: true }
-          : this.randomRefillTile(nextBoard, r, c);
+          : this.randomRefillTile(nextBoard, r, c, refillAssistContext);
         if (spawnScatter) this.scatterDropQueued = false;
         const startY = this.cellY(-1 - spawnIndex);
         const sprite = this.createCandySprite(tile, r, c, true, startY);

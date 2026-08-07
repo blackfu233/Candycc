@@ -17,7 +17,9 @@
     refillMatchSuppressionMaxRate: 0.95,
     freeRefillMatchSuppressionMaxRate: 1.00,
     refillMatchAssistMaxRate: 1.00,
-    freeRefillMatchAssistMaxRate: 1.00,
+    freeRefillMatchAssistMaxRate: 0.35,
+    refillMatchAssistMaxPerMove: 1,
+    freeRefillMatchAssistMaxPerMove: 2,
     refillEfficiencyFloor: 5.20,
     refillEfficiencyCeiling: 6.05,
     freeScatterPerMoveRate: 0.04,
@@ -37,10 +39,10 @@
       { weight: 0.15, min: 1.50, max: 2.40 }
     ],
     mainEasyOrderPayoutBands: [
-      { weight: 0.82, min: 0.34, max: 1.00 },
-      { weight: 0.12, min: 1.25, max: 2.50 },
-      { weight: 0.05, min: 4.00, max: 8.00 },
-      { weight: 0.01, min: 10.00, max: 20.00 }
+      { weight: 0.82, min: 0.40, max: 1.10 },
+      { weight: 0.12, min: 1.40, max: 2.70 },
+      { weight: 0.05, min: 4.50, max: 8.75 },
+      { weight: 0.01, min: 11.50, max: 22.00 }
     ],
     freeOrderPayoutBands: [
       { weight: 0.75, minPosition: 0.00, maxPosition: 0.33 },
