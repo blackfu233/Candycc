@@ -33,21 +33,28 @@
     freeOrderMultiplierSpread: 0.50,
     maxBonusRetriggers: 4,
     maxBonusWinMult: 1000,
+    mainEasyOrderMaxMult: 11,
+    autoMoveDelayMs: 520,
+    autoStrategyWeights: {
+      random: 0.80,
+      special: 0.10,
+      order: 0.10
+    },
     mainOrderNeedBands: [
       { weight: 0.20, min: 0.35, max: 0.65 },
       { weight: 0.65, min: 0.80, max: 1.20 },
       { weight: 0.15, min: 1.50, max: 2.40 }
     ],
     mainEasyOrderPayoutBands: [
-      { weight: 0.82, min: 0.40, max: 1.10 },
-      { weight: 0.12, min: 1.40, max: 2.70 },
-      { weight: 0.05, min: 4.50, max: 8.75 },
-      { weight: 0.01, min: 11.50, max: 22.00 }
+      { weight: 0.72, min: 0.50, max: 1.30 },
+      { weight: 0.20, min: 1.50, max: 2.80 },
+      { weight: 0.07, min: 3.00, max: 4.00 },
+      { weight: 0.01, min: 4.00, max: 4.00 }
     ],
     freeOrderPayoutBands: [
-      { weight: 0.75, minPosition: 0.00, maxPosition: 0.33 },
-      { weight: 0.20, minPosition: 0.33, maxPosition: 0.67 },
-      { weight: 0.05, minPosition: 0.67, maxPosition: 1.00 }
+      { weight: 0.88, minPosition: 0.00, maxPosition: 0.18 },
+      { weight: 0.10, minPosition: 0.18, maxPosition: 0.45 },
+      { weight: 0.02, minPosition: 0.45, maxPosition: 1.00 }
     ],
     bonusGoldMultiplierBands: [
       { weight: 0.9703, min: 1.02, max: 1.10 },

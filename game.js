@@ -82,6 +82,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.modalOpen = false;
     this.inputOpen = false;
     this.sessionActive = false;
+    this.autoPlayEnabled = false;
+    this.autoTimer = null;
     this.wallet = STARTING_WALLET;
     this.displayedWallet = STARTING_WALLET;
     this.walletCounterTween = null;
@@ -1446,6 +1448,18 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#7a2d93",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(11);
+    this.autoButton = this.add.rectangle(W / 2, 678, 88, 19, 0x6f2436, 0.96)
+      .setStrokeStyle(2, 0xffd2df, 0.9)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => this.toggleAutoPlay());
+    this.autoButtonText = this.add.text(W / 2, 678, "AUTO OFF", {
+      fontSize: 10,
+      fontStyle: "900",
+      color: "#fff6d0",
+      stroke: "#351352",
+      strokeThickness: 3
+    }).setOrigin(0.5).setDepth(13);
   }
 
   createBoardFrame() {
@@ -1483,6 +1497,9 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   showPreStart() {
+    this.clearAutoTimer();
+    this.autoPlayEnabled = false;
+    this.autoUiSuppressed = false;
     this.closePopup();
     this.clearEffects();
     this.clearOrderIcons();
@@ -1545,6 +1562,9 @@ class CandyOrdersScene extends Phaser.Scene {
       return;
     }
     this.startCuteMusic();
+    this.clearAutoTimer();
+    this.autoPlayEnabled = false;
+    this.autoUiSuppressed = false;
     this.closePopup();
     this.clearEffects();
     this.clearOrderIcons();
@@ -1599,6 +1619,9 @@ class CandyOrdersScene extends Phaser.Scene {
       return;
     }
     this.closePopup();
+    this.clearAutoTimer();
+    this.autoPlayEnabled = false;
+    this.autoUiSuppressed = false;
     this.clearEffects();
     this.clearOrderIcons();
     this.stopCuteMusic();
@@ -1634,6 +1657,7 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   setMode(mode) {
+    this.currentUiMode = mode;
     const isBet = mode === "bet";
     const isFree = mode === "free";
     const isGame = mode === "game" || isFree;
@@ -1696,9 +1720,12 @@ class CandyOrdersScene extends Phaser.Scene {
     this.winMeterPanel.setVisible(mode === "game");
     this.stepsText.setVisible(mode === "game");
     this.winGainText.setVisible(mode === "game");
+    this.autoButton.setVisible(mode === "game");
+    this.autoButtonText.setVisible(mode === "game");
     [this.keyHudPanel, this.keyHudIcon, this.keyHudText].forEach((item) => item.setVisible(mode === "game"));
     this.freeUiItems.forEach((item) => item.setVisible(isFree));
     this.setBoardVisible(isGame);
+    this.updateAutoUi();
   }
 
   adjustBet(delta) {
@@ -1732,11 +1759,13 @@ class CandyOrdersScene extends Phaser.Scene {
   animateWinMeter(amount) {
     if (amount <= 0) return;
     if (this.winCounterTween) this.winCounterTween.stop();
+    this.autoUiSuppressed = true;
+    this.updateAutoUi();
     this.lastWinAmount = amount;
     const counter = { value: this.displayedWin };
     const target = this.sessionReward;
     this.playCoinSpraySound();
-    this.stepsText.setY(660).setFontSize(19).setText(`WIN ${Math.round(this.displayedWin)}`);
+    this.stepsText.setY(655).setFontSize(16).setText(`WIN ${Math.round(this.displayedWin)}`);
     this.winGainText.setText(`+${amount}`).setAlpha(1).setScale(0.7).setY(692);
     this.winMeterGlow.setFillStyle(0xfff06a, 0.34).setStrokeStyle(4, 0xffffff, 0.95).setAlpha(1).setScale(1);
     this.tweens.killTweensOf([this.winMeterGlow, this.winMeterPanel, this.stepsText, this.winGainText]);
@@ -1778,7 +1807,9 @@ class CandyOrdersScene extends Phaser.Scene {
       onComplete: () => {
         this.displayedWin = target;
         this.winCounterTween = null;
+        this.autoUiSuppressed = false;
         this.updateWinMeterLabel();
+        this.updateAutoUi();
       }
     });
     for (let i = 0; i < 36; i++) {
@@ -1916,10 +1947,21 @@ class CandyOrdersScene extends Phaser.Scene {
 
   updateWinMeterLabel() {
     if (this.winCounterTween) {
-      this.stepsText.setY(660).setFontSize(19).setText(`WIN ${Math.round(this.displayedWin)}`);
+      this.stepsText.setY(655).setFontSize(16).setText(`WIN ${Math.round(this.displayedWin)}`);
       return;
     }
-    this.stepsText.setY(660).setFontSize(14).setText(`LAST WIN: ${this.lastWinAmount}`);
+    this.stepsText.setY(652).setFontSize(11).setText(`LAST WIN: ${this.lastWinAmount}`);
+  }
+
+  updateAutoUi() {
+    if (!this.autoButton || !this.autoButtonText) return;
+    const visible = this.currentUiMode === "game" && !this.autoUiSuppressed;
+    this.autoButton.setVisible(visible);
+    this.autoButtonText.setVisible(visible);
+    this.autoButton
+      .setFillStyle(this.autoPlayEnabled ? 0x168a62 : 0x6f2436, 0.96)
+      .setStrokeStyle(2, this.autoPlayEnabled ? 0x8effcf : 0xffd2df, 0.92);
+    this.autoButtonText.setText(this.autoPlayEnabled ? "AUTO ON" : "AUTO OFF");
   }
 
   updateBetUi() {
@@ -1965,10 +2007,11 @@ class CandyOrdersScene extends Phaser.Scene {
     if (Array.isArray(easyBands) && easyBands.length) {
       const minFactor = Math.min(...easyBands.map((band) => Number(band.min ?? 1)));
       const maxFactor = Math.max(...easyBands.map((band) => Number(band.max ?? band.min ?? 1)));
+      const easyMax = Math.max(1, Number(MATH_CONFIG.mainEasyOrderMaxMult || Infinity));
       return {
         min: Math.max(1, Math.round(median * minFactor)),
         median,
-        max: Math.max(1, Math.round(median * maxFactor))
+        max: Math.max(1, Math.min(easyMax, Math.round(median * maxFactor)))
       };
     }
     const spreadRate = isFree
@@ -2004,7 +2047,7 @@ class CandyOrdersScene extends Phaser.Scene {
         selector -= Number(band.weight || 0);
         if (selector <= 0) { selected = band; break; }
       }
-      const low = Math.max(range.min, Math.round(range.median * Number(selected.min ?? 1)));
+      const low = Math.min(range.max, Math.max(range.min, Math.round(range.median * Number(selected.min ?? 1))));
       const high = Math.min(range.max, Math.max(low, Math.round(range.median * Number(selected.max ?? selected.min ?? 1))));
       return { range, mult: Phaser.Math.Between(low, high) };
     }
@@ -2214,6 +2257,167 @@ class CandyOrdersScene extends Phaser.Scene {
     return false;
   }
 
+  legalMoves() {
+    const moves = [];
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (c < COLS - 1 && this.isLegalSwap(r, c, r, c + 1)) moves.push([[r, c], [r, c + 1]]);
+        if (r < this.rows - 1 && this.isLegalSwap(r, c, r + 1, c)) moves.push([[r, c], [r + 1, c]]);
+      }
+    }
+    return moves;
+  }
+
+  previewAutoMove(move) {
+    const [[r1, c1], [r2, c2]] = move;
+    const a = this.board[r1]?.[c1];
+    const b = this.board[r2]?.[c2];
+    if (!a || !b) return null;
+    this.board[r1][c1] = b;
+    this.board[r2][c2] = a;
+    const remove = new Set();
+    const add = (r, c) => {
+      const tile = this.board[r]?.[c];
+      if (tile && !tile.chest && !tile.scatter) remove.add(`${r},${c}`);
+    };
+    const addRow = (r) => { for (let c = 0; c < COLS; c++) add(r, c); };
+    const addCol = (c) => { for (let r = 0; r < this.rows; r++) add(r, c); };
+    const addArea = (r, c, radius) => {
+      for (let rr = r - radius; rr <= r + radius; rr++) {
+        for (let cc = c - radius; cc <= c + radius; cc++) add(rr, cc);
+      }
+    };
+    const addColor = (type) => {
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const tile = this.board[r]?.[c];
+          if (tile && !tile.scatter && tile.type === type && tile.special !== "chocolate") add(r, c);
+        }
+      }
+    };
+    const matches = this.findMatches();
+    const hits = new Map();
+    matches.forEach((group) => group.cells.forEach(([r, c]) => {
+      add(r, c);
+      const key = `${r},${c}`;
+      const hit = hits.get(key) || { max: 0, dirs: new Set() };
+      hit.max = Math.max(hit.max, group.cells.length);
+      hit.dirs.add(group.dir);
+      hits.set(key, hit);
+    }));
+    const sa = a.special;
+    const sb = b.special;
+    let comboType = null;
+    if (sa && sb) {
+      const specials = [sa, sb];
+      const striped = specials.filter((special) => special === "stripeRow" || special === "stripeCol").length;
+      const bombs = specials.filter((special) => special === "bomb").length;
+      const chocolates = specials.filter((special) => special === "chocolate").length;
+      comboType = chocolates ? "chocolateSpecial" : striped === 2 ? "stripeStripe" : striped && bombs ? "stripeBomb" : bombs === 2 ? "bombBomb" : "any";
+      add(r1, c1);
+      add(r2, c2);
+      if (chocolates === 2) {
+        for (let r = 0; r < this.rows; r++) for (let c = 0; c < COLS; c++) add(r, c);
+      } else if (chocolates === 1) {
+        addColor((sa === "chocolate" ? b : a).type);
+      } else if (striped === 2) {
+        addRow(r2);
+        addCol(c2);
+      } else if (striped && bombs) {
+        for (let r = r2 - 1; r <= r2 + 1; r++) addRow(r);
+        for (let c = c2 - 1; c <= c2 + 1; c++) addCol(c);
+      } else if (bombs === 2) {
+        addArea(r2, c2, 2);
+      }
+    } else if (sa || sb) {
+      const special = sa || sb;
+      const [r, c] = sa ? [r2, c2] : [r1, c1];
+      const other = sa ? b : a;
+      add(r, c);
+      if (special === "stripeRow" || special === "stripeCol") {
+        if (r1 === r2) addRow(r);
+        else addCol(c);
+      } else if (special === "bomb") {
+        addArea(r, c, 1);
+      } else if (special === "chocolate") {
+        addColor(other.type);
+      }
+    }
+    const colors = Object.fromEntries(TYPES.map((type) => [type, 0]));
+    remove.forEach((key) => {
+      const [r, c] = key.split(",").map(Number);
+      const tile = this.board[r]?.[c];
+      if (tile && colors[tile.type] !== undefined) colors[tile.type] += 1;
+    });
+    const madeChocolate = [...hits.values()].some((hit) => hit.max >= 5) ? 1 : 0;
+    const madeSpecial = [...hits.values()].some((hit) => hit.max >= 4 || hit.dirs.size > 1) ? 1 : 0;
+    this.board[r1][c1] = a;
+    this.board[r2][c2] = b;
+    return {
+      removed: remove.size,
+      colors,
+      madeChocolate,
+      madeSpecial,
+      comboType,
+      singleSpecial: !!(sa || sb) && !(sa && sb),
+      doubleSpecial: !!sa && !!sb
+    };
+  }
+
+  autoMoveScore(move, mode) {
+    const preview = this.previewAutoMove(move);
+    if (!preview) return -Infinity;
+    const specialValue = preview.doubleSpecial * 900
+      + preview.singleSpecial * 160
+      + preview.madeChocolate * 650
+      + preview.madeSpecial * 340
+      + preview.removed * 3;
+    if (mode === "special") return specialValue + Math.random();
+    let orderGain = 0;
+    for (const order of this.orders || []) {
+      if (order.completed) continue;
+      const remaining = Math.max(1, order.need - this.orderProgress(order));
+      let gain = 0;
+      if (order.kind === "color") gain = preview.colors[order.type] || 0;
+      else if (order.kind === "any") gain = preview.removed;
+      else if (order.kind === "chocolate") gain = preview.madeChocolate;
+      else if (order.kind === "combo") gain = order.comboType === "any"
+        ? (preview.comboType ? 1 : 0)
+        : (preview.comboType === order.comboType ? 1 : 0);
+      const progress = Math.min(1, gain / remaining);
+      orderGain += progress + (gain >= remaining ? 1 : 0);
+    }
+    return orderGain * 1000 + specialValue * 0.12 + preview.removed + Math.random();
+  }
+
+  chooseAutoMove() {
+    const moves = this.legalMoves();
+    if (!moves.length) return null;
+    const weights = MATH_CONFIG.autoStrategyWeights || { random: 0.4, special: 0.3, order: 0.3 };
+    const total = Math.max(0.000001, Number(weights.random || 0) + Number(weights.special || 0) + Number(weights.order || 0));
+    let roll = Math.random() * total;
+    let mode = "order";
+    roll -= Number(weights.random || 0);
+    if (roll <= 0) mode = "random";
+    else {
+      roll -= Number(weights.special || 0);
+      if (roll <= 0) mode = "special";
+    }
+    if (mode === "random") return Phaser.Utils.Array.GetRandom(moves);
+    let bestScore = -Infinity;
+    let bestMoves = [];
+    for (const move of moves) {
+      const score = this.autoMoveScore(move, mode);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMoves = [move];
+      } else if (score === bestScore) {
+        bestMoves.push(move);
+      }
+    }
+    return Phaser.Utils.Array.GetRandom(bestMoves.length ? bestMoves : moves);
+  }
+
   shuffleBoardTilesOnly() {
     const cells = [];
     const tiles = [];
@@ -2396,8 +2600,69 @@ class CandyOrdersScene extends Phaser.Scene {
     return g;
   }
 
+  clearAutoTimer() {
+    if (!this.autoTimer) return;
+    this.autoTimer.remove(false);
+    this.autoTimer = null;
+  }
+
+  setAutoPlayEnabled(enabled, announce = true) {
+    const next = !!enabled && this.sessionActive;
+    this.clearAutoTimer();
+    this.autoPlayEnabled = next;
+    this.updateAutoUi();
+    if (announce && this.gameMode === "main" && this.sessionActive) {
+      this.statusText.setText(next ? "Auto play enabled." : "Auto play paused.");
+      this.playBetSound(next ? 1 : -1, true);
+    }
+    if (next) this.scheduleAutoMove(320);
+  }
+
+  toggleAutoPlay() {
+    if (this.autoPlayEnabled) {
+      this.setAutoPlayEnabled(false);
+      return;
+    }
+    if (!this.sessionActive || this.busy || this.resolvingMove || this.modalOpen) return;
+    this.setAutoPlayEnabled(true);
+  }
+
+  scheduleAutoMove(delay = null) {
+    if (!this.autoPlayEnabled || !this.sessionActive) return;
+    this.clearAutoTimer();
+    const configuredDelay = Math.max(250, Number(MATH_CONFIG.autoMoveDelayMs || 520));
+    this.autoTimer = this.time.delayedCall(delay === null ? configuredDelay : delay, () => {
+      this.autoTimer = null;
+      this.runFlow(this.performAutoMove());
+    });
+  }
+
+  async performAutoMove() {
+    if (!this.autoPlayEnabled || !this.sessionActive) return;
+    if (this.modalOpen || this.busy || this.resolvingMove || !this.inputOpen) {
+      this.scheduleAutoMove(240);
+      return;
+    }
+    if (this.gameMode === "main" && this.wallet < this.betAmount) {
+      this.setAutoPlayEnabled(false, false);
+      return;
+    }
+    await this.ensureLegalMovesWithShuffle();
+    if (!this.autoPlayEnabled || !this.sessionActive) return;
+    const move = this.chooseAutoMove();
+    if (!move) {
+      this.setAutoPlayEnabled(false, false);
+      return;
+    }
+    const [[r1, c1], [r2, c2]] = move;
+    this.clearSelection();
+    await this.performMove(r1, c1, r2, c2);
+    if (this.autoPlayEnabled && this.sessionActive) this.scheduleAutoMove();
+  }
+
   onTileTap(r, c) {
     if (!this.inputOpen || this.busy || this.resolvingMove || this.modalOpen) return;
+    if (this.autoPlayEnabled) return;
     const tile = this.board[r][c];
     if (!tile || tile.chest) return;
     if (!this.selected) {
@@ -2424,6 +2689,8 @@ class CandyOrdersScene extends Phaser.Scene {
 
   recoverFromFlowError(error) {
     console.error("Candy Orders flow error", error);
+    this.setAutoPlayEnabled(false, false);
+    this.autoUiSuppressed = false;
     this.clearSelection();
     this.clearEffects();
     this.closePopup();
@@ -4223,6 +4490,8 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   async finishSession(reason) {
+    this.setAutoPlayEnabled(false, false);
+    this.autoUiSuppressed = false;
     this.endReason = reason;
     this.sessionActive = false;
     this.inputOpen = false;
@@ -4255,6 +4524,7 @@ class CandyOrdersScene extends Phaser.Scene {
 
   showGameBetMenu() {
     if (this.gameMode !== "main" || !this.sessionActive || this.busy || this.resolvingMove) return;
+    this.setAutoPlayEnabled(false, false);
     this.closePopup();
     this.clearSelection();
     this.modalOpen = true;
@@ -4351,6 +4621,9 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   resetMainGameForBetChange() {
+    this.clearAutoTimer();
+    this.autoPlayEnabled = false;
+    this.autoUiSuppressed = false;
     this.clearEffects();
     this.clearOrderIcons();
     this.busy = false;
