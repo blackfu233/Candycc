@@ -26,6 +26,20 @@
     orderMultiplierSpread: 0.50,
     mainOrderMultiplierSpread: 0.75,
     freeOrderMultiplierSpread: 0.50,
+    mainOrderPayoutBands: [
+      { weight: 0.80, minPosition: 0.00, maxPosition: 0.50 },
+      { weight: 0.15, minPosition: 0.50, maxPosition: 1.00 },
+      { weight: 0.05, minPosition: 1.00, maxPosition: 1.00 }
+    ],
+    mainLuckyWinBands: [
+      { weight: 0.919, mult: 0 },
+      { weight: 0.065, mult: 1 },
+      { weight: 0.015, mult: 3 },
+      { weight: 0.001, mult: 10 }
+    ],
+    maxBonusRetriggers: 4,
+    maxBonusWinMult: 1000,
+    maxPaidMoveWinMult: 1100,
     mainOrderNeedBands: [
       { weight: 0.20, min: 0.35, max: 0.65 },
       { weight: 0.65, min: 0.80, max: 1.20 },

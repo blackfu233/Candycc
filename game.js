@@ -1967,9 +1967,33 @@ class CandyOrdersScene extends Phaser.Scene {
     return { min: Math.max(1, median - spread), median, max: median + spread };
   }
 
+  pickWeightedBand(bands) {
+    if (!Array.isArray(bands) || !bands.length) return null;
+    const total = bands.reduce((sum, band) => sum + Number(band.weight || 0), 0);
+    let roll = Math.random() * Math.max(total, 0.000001);
+    for (const band of bands) {
+      roll -= Number(band.weight || 0);
+      if (roll <= 0) return band;
+    }
+    return bands[bands.length - 1];
+  }
+
   rollOrderMult(order) {
     const range = this.multRange(order.mult, order.scope === "free" ? "free" : "main");
+    if (order.scope !== "free") {
+      const band = this.pickWeightedBand(MATH_CONFIG.mainOrderPayoutBands);
+      if (band) {
+        const span = range.max - range.min;
+        const low = Math.round(range.min + span * Number(band.minPosition || 0));
+        const high = Math.round(range.min + span * Number(band.maxPosition || 0));
+        return { range, mult: Phaser.Math.Between(low, Math.max(low, high)) };
+      }
+    }
     return { range, mult: Phaser.Math.Between(range.min, range.max) };
+  }
+
+  rollMainLuckyMult() {
+    return Number(this.pickWeightedBand(MATH_CONFIG.mainLuckyWinBands)?.mult || 0);
   }
 
   rollBandValue(bands, fallback = 1) {
@@ -2450,7 +2474,8 @@ class CandyOrdersScene extends Phaser.Scene {
       this.wallet -= this.betAmount;
       this.paidBetTotal += this.betAmount;
     }
-    const scatterRate = inFreeGame ? FREE_SCATTER_PER_MOVE_RATE : MAIN_SCATTER_PER_MOVE_RATE;
+    const retriggerCapped = inFreeGame && this.freeScatterRetriggers >= Number(MATH_CONFIG.maxBonusRetriggers || Infinity);
+    const scatterRate = inFreeGame ? (retriggerCapped ? 0 : FREE_SCATTER_PER_MOVE_RATE) : MAIN_SCATTER_PER_MOVE_RATE;
     this.scatterDropQueued = this.countScatters() < this.scatterGoal && Math.random() < scatterRate;
     if (this.walletCounterTween) this.walletCounterTween.stop();
     this.walletCounterTween = null;
@@ -3089,11 +3114,12 @@ class CandyOrdersScene extends Phaser.Scene {
 
   async collectBonusScatterRetrigger() {
     const positions = this.scatterPositions(this.scatterGoal);
-    if (this.gameMode !== "free" || positions.length < this.scatterGoal) return false;
+    const maxRetriggers = Number(MATH_CONFIG.maxBonusRetriggers || Infinity);
+    if (this.gameMode !== "free" || this.freeScatterRetriggers >= maxRetriggers || positions.length < this.scatterGoal) return false;
     this.freeMovesLeft += MATH_CONFIG.bonusRetriggerMoves;
     this.freeScatterRetriggers += 1;
     this.updateFreeUi();
-    this.statusText.setText(`+${MATH_CONFIG.bonusRetriggerMoves} FREE MOVES!`);
+    this.statusText.setText(`+${MATH_CONFIG.bonusRetriggerMoves} FREE MOVES! ${this.freeScatterRetriggers}/${maxRetriggers}`);
     this.playUnlockSound();
     this.time.delayedCall(120, () => this.playPopSound(1480));
     this.cameras.main.flash(420, 255, 240, 106);
@@ -3866,6 +3892,63 @@ class CandyOrdersScene extends Phaser.Scene {
     group.destroy();
   }
 
+  async showMainLuckyWin(mult, reward) {
+    const depth = 76;
+    const y = this.boardY + this.cell * this.rows * 0.48;
+    const panel = this.add.rectangle(W / 2, y, 258, 104, 0x5a1734, 0.96)
+      .setStrokeStyle(5, 0xfff06a, 1)
+      .setDepth(depth)
+      .setScale(0.7)
+      .setAlpha(0);
+    const title = this.add.text(W / 2, y - 26, "LUCKY WIN", {
+      fontSize: 24,
+      fontStyle: "900",
+      color: "#ffffff",
+      stroke: "#8d174f",
+      strokeThickness: 6
+    }).setOrigin(0.5).setDepth(depth + 1).setAlpha(0);
+    const value = this.add.text(W / 2, y + 18, `+${mult}x  +${reward}`, {
+      fontSize: 34,
+      fontStyle: "900",
+      color: "#fff06a",
+      stroke: "#5a1734",
+      strokeThickness: 7
+    }).setOrigin(0.5).setDepth(depth + 1).setScale(0.55).setAlpha(0);
+    const items = [panel, title, value];
+    items.forEach((item) => {
+      item.isFxSprite = true;
+      this.fxSprites.add(item);
+    });
+    this.tweens.add({ targets: panel, alpha: 1, scale: 1, duration: 220, ease: "Back.Out" });
+    this.tweens.add({ targets: [title, value], alpha: 1, scale: 1, duration: 320, ease: "Back.Out" });
+    this.playCoinDing();
+    this.time.delayedCall(120, () => this.playPopSound(mult >= 10 ? 1680 : 1320));
+    this.cameras.main.flash(mult >= 10 ? 260 : 150, 255, 236, 106);
+    await this.wait(mult >= 10 ? 1250 : 900);
+    this.tweens.add({ targets: items, alpha: 0, y: "-=18", duration: 260, ease: "Cubic.In" });
+    await this.wait(280);
+    items.forEach((item) => this.destroyFx(item));
+  }
+
+  async awardMainLuckyWin() {
+    if (this.gameMode === "free") return 0;
+    const mult = this.rollMainLuckyMult();
+    if (mult <= 0) return 0;
+    const moveCap = Math.max(0, Number(MATH_CONFIG.maxPaidMoveWinMult || Infinity) * this.betAmount);
+    const reward = Math.min(Math.round(mult * this.betAmount), Math.max(0, moveCap - this.moveReward));
+    if (reward <= 0) return 0;
+    this.wallet += reward;
+    this.sessionReward += reward;
+    this.moveReward += reward;
+    this.animateWalletMeter(reward);
+    this.animateWinMeter(reward);
+    this.updateBetUi();
+    this.winText.setText(`LUCKY WIN +${reward}`);
+    this.statusText.setText(`Lucky payout ${mult}x`);
+    await this.showMainLuckyWin(mult, reward);
+    return reward;
+  }
+
   async finishMove() {
     if (this.gameMode === "free") {
       await this.finishFreeMove();
@@ -3889,6 +3972,7 @@ class CandyOrdersScene extends Phaser.Scene {
       this.statusText.setText("Keep solving orders.");
       await this.wait(180);
     }
+    await this.awardMainLuckyWin();
     if (this.bonusPending) {
       this.bonusPending = false;
       await this.startFreeGame();
@@ -3910,9 +3994,12 @@ class CandyOrdersScene extends Phaser.Scene {
     await this.maybeTriggerBonusMoveEvent();
     this.updateOrders();
     this.fulfillCompletedOrders();
+    const bonusCap = Number(MATH_CONFIG.maxBonusWinMult || Infinity) * this.betAmount;
+    const reachedMaxWin = this.freeReward >= bonusCap;
+    if (reachedMaxWin) this.freeMovesLeft = 0;
     if (this.moveReward > 0) {
-      this.winText.setText(`BONUS ORDER +${this.moveReward}`);
-      this.statusText.setText("Bonus order complete.");
+      this.winText.setText(reachedMaxWin ? `MAX WIN ${MATH_CONFIG.maxBonusWinMult}x` : `BONUS ORDER +${this.moveReward}`);
+      this.statusText.setText(reachedMaxWin ? "Maximum bonus win reached." : "Bonus order complete.");
       this.showOrderRewardSummary(this.moveCompletions, this.moveReward);
       await this.wait(2300);
     } else {
@@ -4029,7 +4116,11 @@ class CandyOrdersScene extends Phaser.Scene {
         median: Math.max(1, Math.round(roll.range.median * goldMult)),
         max: Math.max(1, Math.round(roll.range.max * goldMult))
       } : null;
-      const orderReward = paysCoins ? finalMult * this.betAmount : 0;
+      let orderReward = paysCoins ? finalMult * this.betAmount : 0;
+      if (isFreeOrder) {
+        const bonusCap = Number(MATH_CONFIG.maxBonusWinMult || Infinity) * this.betAmount;
+        orderReward = Math.min(orderReward, Math.max(0, bonusCap - this.freeReward));
+      }
       const keyGain = 0;
       reward += orderReward;
       this.ordersCompleted += 1;
