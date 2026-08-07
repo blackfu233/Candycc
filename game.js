@@ -2178,7 +2178,7 @@ class CandyOrdersScene extends Phaser.Scene {
     if (!a || !b || a.chest || b.chest) return false;
     this.board[r1][c1] = b;
     this.board[r2][c2] = a;
-    const legal = (!!a.special && !!b.special) || this.findMatches().length > 0;
+    const legal = !!a.special || !!b.special || this.findMatches().length > 0;
     this.board[r1][c1] = a;
     this.board[r2][c2] = b;
     return legal;
@@ -2494,10 +2494,9 @@ class CandyOrdersScene extends Phaser.Scene {
     await this.wait(210);
 
     const specialSwap = a.special || b.special;
-    const doubleSpecialSwap = !!a.special && !!b.special;
     const matchesAfterSwap = this.findMatches();
     const oneSpecialOneNormal = (a.special && !b.special) || (!a.special && b.special);
-    if (!doubleSpecialSwap && matchesAfterSwap.length === 0) {
+    if (!specialSwap && matchesAfterSwap.length === 0) {
       this.board[r1][c1] = a;
       this.board[r2][c2] = b;
       this.sprites[r1][c1] = spriteA;
