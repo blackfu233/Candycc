@@ -2555,13 +2555,17 @@ class CandyOrdersScene extends Phaser.Scene {
     if (oneSpecialOneNormal) {
       const normalMovedPos = a.special ? [r1, c1] : [r2, c2];
       const specialMovedPos = a.special ? [r2, c2] : [r1, c1];
-      if (matchesAfterSwap.length > 0) {
-        const createdSpecials = await this.resolveMatches(matchesAfterSwap, {
+      const normalMatches = matchesAfterSwap.filter((group) =>
+        group.cells.some(([r, c]) => r === normalMovedPos[0] && c === normalMovedPos[1])
+      );
+      if (normalMatches.length > 0) {
+        const createdSpecials = await this.resolveMatches(normalMatches, {
           preferredCreatePositions: [normalMovedPos],
           protectedPositions: [specialMovedPos],
-          skipSpecialExpansion: true
+          allowSpecialExpansion: false
         });
         await this.collapseAndFill([specialMovedPos, ...(createdSpecials || []).map(({ r, c }) => [r, c])]);
+        await this.wait(80);
       }
       await this.activateMovedSpecials(a, b, [[r1, c1], [r2, c2]]);
     } else if (specialSwap) {
