@@ -1448,13 +1448,16 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#7a2d93",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(11);
-    this.autoButton = this.add.rectangle(W / 2, 678, 88, 19, 0x6f2436, 0.96)
+    this.autoButton = this.add.rectangle(W / 2, 670, 108, 24, 0x6f2436, 0.98)
       .setStrokeStyle(2, 0xffd2df, 0.9)
       .setDepth(12)
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.toggleAutoPlay());
-    this.autoButtonText = this.add.text(W / 2, 678, "AUTO OFF", {
-      fontSize: 10,
+    this.autoStateDot = this.add.circle(W / 2 - 39, 670, 5, 0xff8bab, 1)
+      .setStrokeStyle(2, 0xffffff, 0.85)
+      .setDepth(13);
+    this.autoButtonText = this.add.text(W / 2 + 7, 670, "AUTO OFF", {
+      fontSize: 11,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#351352",
@@ -1721,6 +1724,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.stepsText.setVisible(mode === "game");
     this.winGainText.setVisible(mode === "game");
     this.autoButton.setVisible(mode === "game");
+    this.autoStateDot.setVisible(mode === "game");
     this.autoButtonText.setVisible(mode === "game");
     [this.keyHudPanel, this.keyHudIcon, this.keyHudText].forEach((item) => item.setVisible(mode === "game"));
     this.freeUiItems.forEach((item) => item.setVisible(isFree));
@@ -1950,17 +1954,21 @@ class CandyOrdersScene extends Phaser.Scene {
       this.stepsText.setY(655).setFontSize(16).setText(`WIN ${Math.round(this.displayedWin)}`);
       return;
     }
-    this.stepsText.setY(652).setFontSize(11).setText(`LAST WIN: ${this.lastWinAmount}`);
+    this.stepsText.setY(648).setFontSize(10).setText(`LAST WIN: ${this.lastWinAmount}`);
   }
 
   updateAutoUi() {
-    if (!this.autoButton || !this.autoButtonText) return;
+    if (!this.autoButton || !this.autoButtonText || !this.autoStateDot) return;
     const visible = this.currentUiMode === "game" && !this.autoUiSuppressed;
     this.autoButton.setVisible(visible);
+    this.autoStateDot.setVisible(visible);
     this.autoButtonText.setVisible(visible);
     this.autoButton
       .setFillStyle(this.autoPlayEnabled ? 0x168a62 : 0x6f2436, 0.96)
       .setStrokeStyle(2, this.autoPlayEnabled ? 0x8effcf : 0xffd2df, 0.92);
+    this.autoStateDot
+      .setFillStyle(this.autoPlayEnabled ? 0x8effcf : 0xff8bab, 1)
+      .setStrokeStyle(2, 0xffffff, this.autoPlayEnabled ? 1 : 0.82);
     this.autoButtonText.setText(this.autoPlayEnabled ? "AUTO ON" : "AUTO OFF");
   }
 
@@ -2364,19 +2372,20 @@ class CandyOrdersScene extends Phaser.Scene {
     };
   }
 
-  autoMoveScore(move, mode) {
+  autoMoveAnalysis(move) {
     const preview = this.previewAutoMove(move);
-    if (!preview) return -Infinity;
-    const specialValue = preview.doubleSpecial * 900
-      + preview.singleSpecial * 160
-      + preview.madeChocolate * 650
-      + preview.madeSpecial * 340
-      + preview.removed * 3;
-    if (mode === "special") return specialValue + Math.random();
-    let orderGain = 0;
+    if (!preview) return null;
+    const specialScore = preview.doubleSpecial * 1500
+      + preview.singleSpecial * (110 + preview.removed * 8)
+      + preview.madeChocolate * 1200
+      + preview.madeSpecial * 480
+      + preview.removed * 5;
+    let orderScore = 0;
+    let orderCompletions = 0;
     for (const order of this.orders || []) {
       if (order.completed) continue;
-      const remaining = Math.max(1, order.need - this.orderProgress(order));
+      const current = this.orderProgress(order);
+      const remaining = Math.max(1, order.need - current);
       let gain = 0;
       if (order.kind === "color") gain = preview.colors[order.type] || 0;
       else if (order.kind === "any") gain = preview.removed;
@@ -2385,14 +2394,46 @@ class CandyOrdersScene extends Phaser.Scene {
         ? (preview.comboType ? 1 : 0)
         : (preview.comboType === order.comboType ? 1 : 0);
       const progress = Math.min(1, gain / remaining);
-      orderGain += progress + (gain >= remaining ? 1 : 0);
+      const tierWeight = order.scope === "free"
+        ? 1.15
+        : order.tier === "Hard" ? 1.25 : order.tier === "Medium" ? 1.12 : 1;
+      const closeness = 1 + Math.min(0.75, current / Math.max(1, order.need));
+      const completes = gain >= remaining && gain > 0;
+      if (completes) orderCompletions += 1;
+      orderScore += tierWeight * (progress * 2 * closeness + (completes ? 6 : 0));
     }
-    return orderGain * 1000 + specialValue * 0.12 + preview.removed + Math.random();
+    return {
+      move,
+      preview,
+      specialScore,
+      orderScore,
+      orderCompletions,
+      premium: preview.doubleSpecial || preview.madeChocolate || orderCompletions > 0
+    };
   }
 
   chooseAutoMove() {
     const moves = this.legalMoves();
     if (!moves.length) return null;
+    const analyses = moves.map((move) => this.autoMoveAnalysis(move)).filter(Boolean);
+    const chooseBest = (pool, scoreFor) => {
+      let bestScore = -Infinity;
+      let best = [];
+      for (const analysis of pool) {
+        const score = scoreFor(analysis);
+        if (score > bestScore) {
+          bestScore = score;
+          best = [analysis.move];
+        } else if (score === bestScore) {
+          best.push(analysis.move);
+        }
+      }
+      return Phaser.Utils.Array.GetRandom(best.length ? best : moves);
+    };
+    const premium = analyses.filter((analysis) => analysis.premium);
+    if (premium.length) {
+      return chooseBest(premium, (analysis) => analysis.orderCompletions * 4000 + analysis.specialScore + analysis.orderScore * 220);
+    }
     const weights = MATH_CONFIG.autoStrategyWeights || { random: 0.4, special: 0.3, order: 0.3 };
     const total = Math.max(0.000001, Number(weights.random || 0) + Number(weights.special || 0) + Number(weights.order || 0));
     let roll = Math.random() * total;
@@ -2404,18 +2445,8 @@ class CandyOrdersScene extends Phaser.Scene {
       if (roll <= 0) mode = "special";
     }
     if (mode === "random") return Phaser.Utils.Array.GetRandom(moves);
-    let bestScore = -Infinity;
-    let bestMoves = [];
-    for (const move of moves) {
-      const score = this.autoMoveScore(move, mode);
-      if (score > bestScore) {
-        bestScore = score;
-        bestMoves = [move];
-      } else if (score === bestScore) {
-        bestMoves.push(move);
-      }
-    }
-    return Phaser.Utils.Array.GetRandom(bestMoves.length ? bestMoves : moves);
+    if (mode === "special") return chooseBest(analyses, (analysis) => analysis.specialScore + analysis.orderScore * 35);
+    return chooseBest(analyses, (analysis) => analysis.orderScore * 1000 + analysis.specialScore * 0.12 + analysis.preview.removed);
   }
 
   shuffleBoardTilesOnly() {

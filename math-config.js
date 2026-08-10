@@ -36,9 +36,9 @@
     mainEasyOrderMaxMult: 11,
     autoMoveDelayMs: 520,
     autoStrategyWeights: {
-      random: 0.80,
-      special: 0.10,
-      order: 0.10
+      random: 0.70,
+      special: 0.17,
+      order: 0.13
     },
     mainOrderNeedBands: [
       { weight: 0.20, min: 0.35, max: 0.65 },
