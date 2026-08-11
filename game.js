@@ -119,8 +119,11 @@ class CandyOrdersScene extends Phaser.Scene {
     this.freeEventCount = 0;
     this.freeColorClearUsed = false;
     this.freeMoveHadEvent = false;
+    this.bonusEventSessionCounts = { special: 0, discount: 0, gold: 0, clear: 0 };
     this.freeBoughtMode = false;
     this.scatterDropQueued = false;
+    this.mainScatterCountdown = this.rollScatterInterval(false);
+    this.freeScatterCountdown = 0;
     this.freeMusicTimer = null;
     this.configureBoard(MAIN_ROWS);
     this.displayedWin = 0;
@@ -2029,9 +2032,21 @@ class CandyOrdersScene extends Phaser.Scene {
     return { min: Math.max(1, median - spread), median, max: median + spread };
   }
 
+  orderMultRange(order) {
+    if (order?.scope === "free" && order.payoutTicket) {
+      const min = Math.max(1, Math.round(Number(order.payoutTicket.min || 1) * FREE_PAYOUT_SCALE));
+      const max = Math.max(min, Math.round(Number(order.payoutTicket.max ?? order.payoutTicket.min ?? 1) * FREE_PAYOUT_SCALE));
+      return { min, median: Math.round((min + max) / 2), max };
+    }
+    return this.multRange(order.mult, order.scope === "free" ? "free" : "main", order.tier);
+  }
+
   rollOrderMult(order) {
     const scope = order.scope === "free" ? "free" : "main";
-    const range = this.multRange(order.mult, scope, order.tier);
+    const range = this.orderMultRange(order);
+    if (scope === "free" && order.payoutTicket) {
+      return { range, mult: Phaser.Math.Between(range.min, range.max) };
+    }
     const freeBands = scope === "free" ? MATH_CONFIG.freeOrderPayoutBands : null;
     if (Array.isArray(freeBands) && freeBands.length) {
       const total = freeBands.reduce((sum, band) => sum + Number(band.weight || 0), 0);
@@ -2074,6 +2089,48 @@ class CandyOrdersScene extends Phaser.Scene {
     const min = Number(selected.min ?? fallback);
     const max = Number(selected.max ?? min);
     return Phaser.Math.FloatBetween(min, max);
+  }
+
+  pickWeightedBand(bands) {
+    if (!Array.isArray(bands) || !bands.length) return null;
+    const total = bands.reduce((sum, band) => sum + Math.max(0, Number(band.weight || 0)), 0);
+    if (!(total > 0)) return bands[Phaser.Math.Between(0, bands.length - 1)];
+    let roll = Math.random() * total;
+    for (const band of bands) {
+      roll -= Math.max(0, Number(band.weight || 0));
+      if (roll <= 0) return band;
+    }
+    return bands[bands.length - 1];
+  }
+
+  rollIntegerRange(ticket, fallback = 1) {
+    const min = Math.max(0, Math.round(Number(ticket?.min ?? fallback)));
+    const max = Math.max(min, Math.round(Number(ticket?.max ?? min)));
+    return Phaser.Math.Between(min, max);
+  }
+
+  rollScatterInterval(free) {
+    const bands = free ? MATH_CONFIG.freeScatterIntervalBands : MATH_CONFIG.mainScatterIntervalBands;
+    if (Array.isArray(bands) && bands.length) return Math.max(1, this.rollIntegerRange(this.pickWeightedBand(bands), 1));
+    const rate = free ? FREE_SCATTER_PER_MOVE_RATE : MAIN_SCATTER_PER_MOVE_RATE;
+    if (!(rate > 0)) return Number.MAX_SAFE_INTEGER;
+    return Math.max(1, Math.ceil(Math.log(Math.max(1e-12, 1 - Math.random())) / Math.log(1 - Math.min(0.999999, rate))));
+  }
+
+  advanceScatterSchedule(free, retriggerCapped = false) {
+    if (this.scatterDropQueued || this.countScatters() >= this.scatterGoal || retriggerCapped) return this.scatterDropQueued;
+    const bands = free ? MATH_CONFIG.freeScatterIntervalBands : MATH_CONFIG.mainScatterIntervalBands;
+    if (Array.isArray(bands) && bands.length) {
+      const key = free ? "freeScatterCountdown" : "mainScatterCountdown";
+      this[key] -= 1;
+      if (this[key] <= 0) {
+        this[key] = this.rollScatterInterval(free);
+        return true;
+      }
+      return false;
+    }
+    const rate = free ? FREE_SCATTER_PER_MOVE_RATE : MAIN_SCATTER_PER_MOVE_RATE;
+    return Math.random() < rate;
   }
 
   rollMainOrderNeed(baseNeed) {
@@ -2135,9 +2192,15 @@ class CandyOrdersScene extends Phaser.Scene {
     const tierIndex = ["Bonus Easy", "Bonus Medium", "Bonus Hard"].indexOf(tier);
     const template = Phaser.Utils.Array.GetRandom(MATH_CONFIG.freeOrderPools[tierIndex]);
     const spec = { ...template };
+    const payoutBands = Array.isArray(spec.payoutBands) && spec.payoutBands.length
+      ? spec.payoutBands
+      : MATH_CONFIG.freeOrderPayoutTickets?.[tierIndex];
+    delete spec.payoutBands;
     if (spec.kind === "color") spec.type = TYPES[spec.typeIndex];
     delete spec.typeIndex;
     const order = { tier, scope: "free", ...spec };
+    const payoutTicket = this.pickWeightedBand(payoutBands);
+    order.payoutTicket = payoutTicket ? { ...payoutTicket } : null;
     order.start = this.rawOrderProgress(order);
     order.gold = false;
     order.discounted = false;
@@ -2394,8 +2457,14 @@ class CandyOrdersScene extends Phaser.Scene {
         ? (preview.comboType ? 1 : 0)
         : (preview.comboType === order.comboType ? 1 : 0);
       const progress = Math.min(1, gain / remaining);
+      const rewardPriority = order.scope === "free" && order.payoutTicket
+        ? Phaser.Math.Clamp(Math.sqrt(
+          ((Number(order.payoutTicket.min || 1) + Number(order.payoutTicket.max ?? order.payoutTicket.min ?? 1)) / 2)
+          / Math.max(1, this.effectiveMult(order.mult) * 3)
+        ), 0.75, 3)
+        : 1;
       const tierWeight = order.scope === "free"
-        ? 1.15
+        ? 1.15 * rewardPriority
         : order.tier === "Hard" ? 1.25 : order.tier === "Medium" ? 1.12 : 1;
       const closeness = 1 + Math.min(0.75, current / Math.max(1, order.need));
       const completes = gain >= remaining && gain > 0;
@@ -2836,8 +2905,7 @@ class CandyOrdersScene extends Phaser.Scene {
       this.paidBetTotal += this.betAmount;
     }
     const retriggerCapped = inFreeGame && this.freeScatterRetriggers >= Number(MATH_CONFIG.maxBonusRetriggers || Infinity);
-    const scatterRate = inFreeGame ? (retriggerCapped ? 0 : FREE_SCATTER_PER_MOVE_RATE) : MAIN_SCATTER_PER_MOVE_RATE;
-    this.scatterDropQueued = this.countScatters() < this.scatterGoal && Math.random() < scatterRate;
+    this.scatterDropQueued = this.advanceScatterSchedule(inFreeGame, retriggerCapped);
     if (this.walletCounterTween) this.walletCounterTween.stop();
     this.walletCounterTween = null;
     this.displayedWallet = this.wallet;
@@ -3777,8 +3845,9 @@ class CandyOrdersScene extends Phaser.Scene {
     const positions = this.plainCandyPositions();
     if (!positions.length) return false;
     this.showBonusEventBanner("SUGAR FORGE", 0x8ee8ff);
+    const countTicket = this.pickWeightedBand(MATH_CONFIG.bonusSpecialCountBands);
     const roll = Math.random();
-    const count = roll < 0.68 ? 1 : roll < 0.92 ? 2 : 3;
+    const count = countTicket ? this.rollIntegerRange(countTicket, 1) : (roll < 0.68 ? 1 : roll < 0.92 ? 2 : 3);
     const picked = Phaser.Utils.Array.Shuffle([...positions]).slice(0, Math.min(count, positions.length));
     for (let i = 0; i < picked.length; i++) {
       const [r, c] = picked[i];
@@ -3856,7 +3925,10 @@ class CandyOrdersScene extends Phaser.Scene {
     const picked = Phaser.Utils.Array.GetRandom(candidates);
     const remaining = picked.order.need - picked.progress;
     const fromNeed = picked.order.need;
-    const cutRate = Phaser.Math.FloatBetween(0.22, 0.42);
+    const discountTicket = this.pickWeightedBand(MATH_CONFIG.bonusDiscountBands);
+    const cutRate = discountTicket
+      ? Phaser.Math.FloatBetween(Number(discountTicket.min || 0.22), Number(discountTicket.max ?? discountTicket.min ?? 0.42))
+      : Phaser.Math.FloatBetween(0.22, 0.42);
     const cutAmount = Math.max(1, Math.floor(remaining * cutRate));
     picked.order.need = Math.max(picked.progress + 1, picked.order.need - cutAmount);
     const toNeed = picked.order.need;
@@ -3876,7 +3948,7 @@ class CandyOrdersScene extends Phaser.Scene {
       .filter(({ order }) => order.scope === "free" && !order.completed && !order.gold);
     if (!candidates.length) return false;
     const picked = Phaser.Utils.Array.GetRandom(candidates);
-    const fromRange = this.multRange(picked.order.mult, "free");
+    const fromRange = this.orderMultRange(picked.order);
     picked.order.gold = true;
     picked.order.goldMult = Number(this.rollBandValue(MATH_CONFIG.bonusGoldMultiplierBands, 1.24).toFixed(2));
     const toRange = {
@@ -3894,12 +3966,26 @@ class CandyOrdersScene extends Phaser.Scene {
 
   async maybeTriggerBonusMoveEvent() {
     if (this.gameMode !== "free" || this.freeMoveHadEvent) return false;
-    const events = [
-      { weight: 48, run: () => this.bonusEventMakeSpecial() },
-      { weight: this.freeColorClearUsed ? 0 : 8, run: () => this.bonusEventClearColor() },
-      { weight: 30, run: () => this.bonusEventDiscountOrder() },
-      { weight: this.orders.some((order) => order.scope === "free" && order.gold) ? 8 : 20, run: () => this.bonusEventGoldOrder() }
-    ].filter((event) => event.weight > 0);
+    const configured = Array.isArray(MATH_CONFIG.bonusEventTickets) && MATH_CONFIG.bonusEventTickets.length
+      ? MATH_CONFIG.bonusEventTickets
+      : [
+        { kind: "special", weight: 48 },
+        { kind: "discount", weight: 30 },
+        { kind: "gold", weight: 20, repeatWeight: 8 },
+        { kind: "clear", weight: 8, repeatWeight: 0, maxPerBonus: 1 }
+      ];
+    const runEvent = {
+      special: () => this.bonusEventMakeSpecial(),
+      clear: () => this.bonusEventClearColor(),
+      discount: () => this.bonusEventDiscountOrder(),
+      gold: () => this.bonusEventGoldOrder()
+    };
+    const events = configured.map((ticket) => {
+      const count = Number(this.bonusEventSessionCounts[ticket.kind] || 0);
+      const max = Number(ticket.maxPerBonus ?? Infinity);
+      const weight = count > 0 ? Number(ticket.repeatWeight ?? ticket.weight ?? 0) : Number(ticket.weight || 0);
+      return { kind: ticket.kind, weight: count >= max ? 0 : Math.max(0, weight), run: runEvent[ticket.kind] };
+    }).filter((event) => event.weight > 0 && event.run);
     for (let attempt = 0; attempt < events.length; attempt++) {
       const total = events.reduce((sum, event) => sum + event.weight, 0);
       let roll = Math.random() * total;
@@ -3915,6 +4001,7 @@ class CandyOrdersScene extends Phaser.Scene {
       if (await selected.run()) {
         this.freeMoveHadEvent = true;
         this.freeEventCount += 1;
+        this.bonusEventSessionCounts[selected.kind] = Number(this.bonusEventSessionCounts[selected.kind] || 0) + 1;
         return true;
       }
     }
@@ -3948,7 +4035,7 @@ class CandyOrdersScene extends Phaser.Scene {
         row.rewardPlate.setDisplaySize(order.scope === "free" ? 82 : 82, 23);
         row.rewardPlate.setFillStyle(order.scope === "free" && order.gold ? 0xfff06a : 0xfff4b8, 0.96);
       }
-      const range = this.multRange(order.mult, order.scope === "free" ? "free" : "main", order.tier);
+      const range = this.orderMultRange(order);
       const shownRange = order.scope === "free" && order.gold
         ? {
           min: Math.max(1, Math.round(range.min * (order.goldMult || 1.5))),
@@ -4390,6 +4477,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.freeEventCount = 0;
     this.freeColorClearUsed = false;
     this.freeMoveHadEvent = false;
+    this.bonusEventSessionCounts = { special: 0, discount: 0, gold: 0, clear: 0 };
+    this.freeScatterCountdown = this.rollScatterInterval(true);
     this.moveReward = 0;
     this.moveCompletions = [];
     this.scatterDropQueued = false;
@@ -4681,6 +4770,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.moveReward = 0;
     this.moveCompletions = [];
     this.scatterDropQueued = false;
+    this.mainScatterCountdown = this.rollScatterInterval(false);
     this.displayedWin = 0;
     this.lastWinAmount = 0;
     this.displayedWallet = this.wallet;
