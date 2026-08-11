@@ -26,8 +26,8 @@
     bonusStartMoves: 15,
     bonusRetriggerMoves: 15,
     bonusBuyCostMult: 100,
-    mainPayoutScale: 1.0,
-    freePayoutScale: 1.00,
+    mainPayoutScale: 0.77,
+    freePayoutScale: 1.33,
     orderMultiplierSpread: 0.50,
     mainOrderMultiplierSpread: 0.75,
     freeOrderMultiplierSpread: 0.50,
@@ -92,25 +92,25 @@
     ],
     freeOrderPools: [
       [
-        { kind: "any", need: 110, mult: 5 }
+        { kind: "any", need: 74, mult: 5 }
       ],
       [
-        { kind: "color", typeIndex: 0, need: 60, mult: 12 },
-        { kind: "color", typeIndex: 1, need: 60, mult: 12 },
-        { kind: "color", typeIndex: 2, need: 60, mult: 12 },
-        { kind: "color", typeIndex: 3, need: 60, mult: 12 },
-        { kind: "color", typeIndex: 4, need: 60, mult: 12 },
-        { kind: "any", need: 250, mult: 12 },
-        { kind: "cascade", need: 15, mult: 12 }
+        { kind: "color", typeIndex: 0, need: 40, mult: 12 },
+        { kind: "color", typeIndex: 1, need: 40, mult: 12 },
+        { kind: "color", typeIndex: 2, need: 40, mult: 12 },
+        { kind: "color", typeIndex: 3, need: 40, mult: 12 },
+        { kind: "color", typeIndex: 4, need: 40, mult: 12 },
+        { kind: "any", need: 168, mult: 12 },
+        { kind: "cascade", need: 10, mult: 12 }
       ],
       [
-        { kind: "color", typeIndex: 0, need: 108, mult: 25 },
-        { kind: "color", typeIndex: 1, need: 108, mult: 25 },
-        { kind: "color", typeIndex: 2, need: 108, mult: 25 },
-        { kind: "color", typeIndex: 3, need: 108, mult: 25 },
-        { kind: "color", typeIndex: 4, need: 108, mult: 25 },
-        { kind: "any", need: 450, mult: 25 },
-        { kind: "cascade", need: 30, mult: 25 }
+        { kind: "color", typeIndex: 0, need: 72, mult: 25 },
+        { kind: "color", typeIndex: 1, need: 72, mult: 25 },
+        { kind: "color", typeIndex: 2, need: 72, mult: 25 },
+        { kind: "color", typeIndex: 3, need: 72, mult: 25 },
+        { kind: "color", typeIndex: 4, need: 72, mult: 25 },
+        { kind: "any", need: 302, mult: 25 },
+        { kind: "cascade", need: 20, mult: 25 }
       ]
     ]
   });
