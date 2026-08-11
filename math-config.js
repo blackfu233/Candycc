@@ -39,7 +39,7 @@
     bonusRetriggerMoves: 15,
     bonusBuyCostMult: 100,
     mainPayoutScale: 0.73,
-    freePayoutScale: 1.12,
+    freePayoutScale: 1.08,
     orderMultiplierSpread: 0.50,
     mainOrderMultiplierSpread: 0.75,
     freeOrderMultiplierSpread: 0.50,
