@@ -25,11 +25,11 @@ const COLORS = {
   chocolate: 0x9a522c
 };
 const ORDER_ROW_LAYOUT = [
-  { y: 136, iconX: 82, textX: 124, rewardX: W - 93, labelDy: -5, progressDy: 8 },
-  { y: 171, iconX: 82, textX: 124, rewardX: W - 93, labelDy: -5, progressDy: 8 },
-  { y: 206, iconX: 82, textX: 124, rewardX: W - 93, labelDy: -5, progressDy: 8 }
+  { y: 119, iconX: 60, textX: 104, rewardX: W - 58, labelDy: -6, progressDy: 8 },
+  { y: 166, iconX: 60, textX: 104, rewardX: W - 58, labelDy: -6, progressDy: 8 },
+  { y: 213, iconX: 60, textX: 104, rewardX: W - 58, labelDy: -6, progressDy: 8 }
 ];
-const CONVEYOR_LANE_Y = [62, 108, 154];
+const CONVEYOR_LANE_Y = [48, 96, 144];
 const CONVEYOR_LEFT_X = 39;
 const CONVEYOR_RIGHT_X = W - 31;
 const LABELS = {
@@ -67,11 +67,18 @@ class CandyOrdersScene extends Phaser.Scene {
     this.load.image("sym-chest", "assets/symbols/chest.png");
     this.load.image("sym-key", "assets/symbols/key.png");
     this.load.image("sym-scatter", "assets/generated/scatter-chest-premium.png?v=20260615artapply");
-    this.load.image("ui-task-panel-strawberry", "assets/generated/ui-task-panel-strawberry.png?v=20260615strawberryui");
-    this.load.image("ui-bottom-panel-strawberry", "assets/generated/ui-bottom-panel-strawberry.png?v=20260615strawberryui");
-    this.load.image("ui-board-frame-strawberry", "assets/generated/ui-board-frame-thin-square.png?v=20260615thinboard");
-    this.load.image("ui-start-screen-panel", "assets/generated/ui-start-screen-panel.png?v=20260615startpanel");
-    this.load.image("ui-logo-candy-orders", "assets/generated/logo-candy-orders.png?v=20260615artapply");
+    this.load.image("ui-start-console-v2", "assets/ui-v2/start-console.png?v=20260814uiv2");
+    this.load.image("ui-logo-v2", "assets/ui-v2/logo.png?v=20260814uiv2");
+    this.load.image("ui-conveyor-panel-v2", "assets/ui-v2/conveyor-panel.png?v=20260814uiv2");
+    this.load.image("ui-bottom-hud-v2", "assets/ui-v2/bottom-hud.png?v=20260814uiv2");
+    this.load.image("ui-main-board-frame-v2", "assets/ui-v2/main-board-frame.png?v=20260814uiv2");
+    this.load.image("ui-bonus-board-frame-v2", "assets/ui-v2/bonus-board-frame.png?v=20260814uiv2");
+    this.load.image("ui-bonus-hud-v2", "assets/ui-v2/bonus-hud.png?v=20260814uiv2");
+    this.load.image("ui-bonus-orders-v2", "assets/ui-v2/bonus-orders.png?v=20260814uiv2");
+    TYPES.forEach((type) => this.load.image(`order-${type}`, `assets/ui-v2/order-${type}.png?v=20260814uiv2`));
+    this.load.image("order-any", "assets/ui-v2/order-any.png?v=20260814uiv2");
+    this.load.image("order-cascade", "assets/ui-v2/order-cascade.png?v=20260814uiv2");
+    this.load.image("order-chocolate", "assets/ui-v2/order-chocolate.png?v=20260814uiv2");
   }
 
   create() {
@@ -148,9 +155,9 @@ class CandyOrdersScene extends Phaser.Scene {
 
   configureBoard(rows) {
     this.rows = rows;
-    this.cell = rows === FREE_ROWS ? 43 : 58;
+    this.cell = rows === FREE_ROWS ? 47 : 58;
     this.boardX = Math.round((W - this.cell * COLS) / 2);
-    this.boardY = rows === FREE_ROWS ? 292 : 220;
+    this.boardY = rows === FREE_ROWS ? 246 : 220;
   }
 
   createBackground() {
@@ -246,65 +253,8 @@ class CandyOrdersScene extends Phaser.Scene {
       }
       this.textures.addCanvas(key, canvas);
     });
-    this.createOrderIconTexture("sym-any-order", "any");
-    this.createOrderIconTexture("sym-cascade-order", "cascade");
     this.createScatterTexture();
   }
-
-  createOrderIconTexture(key, kind) {
-    if (this.textures.exists(key)) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    const r = (x, y, w, h, fill) => {
-      ctx.fillStyle = fill;
-      ctx.fillRect(x, y, w, h);
-    };
-    if (kind === "cascade") {
-      ctx.fillStyle = "#351352";
-      ctx.beginPath();
-      ctx.moveTo(33, 3);
-      ctx.lineTo(12, 36);
-      ctx.lineTo(27, 36);
-      ctx.lineTo(20, 61);
-      ctx.lineTo(53, 27);
-      ctx.lineTo(38, 27);
-      ctx.lineTo(50, 3);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = "#fff06a";
-      ctx.beginPath();
-      ctx.moveTo(35, 9);
-      ctx.lineTo(20, 32);
-      ctx.lineTo(34, 32);
-      ctx.lineTo(29, 50);
-      ctx.lineTo(45, 32);
-      ctx.lineTo(32, 32);
-      ctx.lineTo(42, 9);
-      ctx.closePath();
-      ctx.fill();
-      r(9, 12, 7, 7, "#8ee8ff");
-      r(48, 45, 7, 7, "#ff8fc7");
-    } else {
-      r(2, 23, 14, 18, "#351352");
-      r(48, 23, 14, 18, "#351352");
-      r(5, 26, 11, 12, "#8ee8ff");
-      r(48, 26, 11, 12, "#ff8fc7");
-      r(12, 11, 40, 42, "#351352");
-      r(16, 7, 32, 50, "#351352");
-      r(16, 15, 16, 17, "#ff5372");
-      r(32, 15, 16, 17, "#58c8ff");
-      r(16, 32, 16, 17, "#ffdf57");
-      r(32, 32, 16, 17, "#c77bff");
-      r(25, 24, 14, 16, "#ffffff");
-      r(29, 20, 6, 24, "#ffffff");
-      r(21, 29, 22, 6, "#ffffff");
-    }
-    this.textures.addCanvas(key, canvas);
-  }
-
 
   createScatterTexture() {
     if (this.textures.exists("sym-scatter")) return;
@@ -1327,9 +1277,9 @@ class CandyOrdersScene extends Phaser.Scene {
 
   createUi() {
     this.freeSceneWash = this.add.rectangle(W / 2, H / 2, W, H, 0x4f1220, 0.58);
-    this.mainFrameArt = this.add.image(W / 2, H / 2 + 8, "ui-start-screen-panel")
-      .setDisplaySize(W - 18, H - 8)
-      .setAlpha(0.96)
+    this.mainFrameArt = this.add.image(W / 2, H / 2, "ui-start-console-v2")
+      .setDisplaySize(W - 8, H - 13)
+      .setAlpha(1)
       .setDepth(0);
     this.logoShadow = this.add.text(W / 2 + 4, 34, "CANDY", {
       fontFamily: "Trebuchet MS",
@@ -1356,8 +1306,8 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#4b125b",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(41);
-    this.titleLogoArt = this.add.image(W / 2, 66, "ui-logo-candy-orders")
-      .setDisplaySize(230, 90)
+    this.titleLogoArt = this.add.image(W / 2, 118, "ui-logo-v2")
+      .setDisplaySize(250, 125)
       .setDepth(40);
     [this.logoShadow, this.titleText, this.logoRibbon, this.logoSubText].forEach((item) => item.setVisible(false));
     this.ordersHeader = this.add.text(W / 2, 88, "", {
@@ -1368,27 +1318,25 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 4
     }).setOrigin(0.5);
 
-    this.betFrameArt = this.add.image(W / 2, 374, "ui-task-panel-strawberry")
-      .setDisplaySize(W - 62, 188)
-      .setAlpha(0);
+    this.betFrameArt = this.add.rectangle(W / 2, 368, 1, 1, 0x000000, 0);
     this.betPanel = this.add.rectangle(W / 2, 374, W - 96, 156, 0x6a1422, 0);
     this.betTopGlow = this.add.rectangle(W / 2, 289, W - 102, 8, 0x8ee8ff, 0);
     this.betBottomGlow = this.add.rectangle(W / 2, 459, W - 104, 8, 0xff8fc7, 0);
-    this.betHeaderText = this.add.text(W / 2, 324, "SET YOUR BET", {
+    this.betHeaderText = this.add.text(W / 2, 305, "BET PER MOVE", {
       fontSize: 21,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#351352",
       strokeThickness: 5
     }).setOrigin(0.5);
-    this.betHintText = this.add.text(W / 2, 357, "Each move spends this amount", {
+    this.betHintText = this.add.text(W / 2, 326, "", {
       fontSize: 13,
       fontStyle: "800",
       color: "#ffffff",
       stroke: "#351352",
       strokeThickness: 3
     }).setOrigin(0.5);
-    this.walletText = this.add.text(W / 2, 274, "", {
+    this.walletText = this.add.text(W / 2, 267, "", {
       fontSize: 18,
       fontStyle: "900",
       color: "#8ee8ff",
@@ -1397,26 +1345,26 @@ class CandyOrdersScene extends Phaser.Scene {
       align: "center"
     }).setOrigin(0.5).setDepth(71);
 
-    this.betPillShadow = this.add.rectangle(W / 2, 410, 138, 68, 0x3b0c16, 0);
-    this.betPill = this.add.rectangle(W / 2, 402, 142, 68, 0x5a1020, 0).setStrokeStyle(4, 0xffe277, 0);
+    this.betPillShadow = this.add.rectangle(W / 2, 376, 138, 68, 0x3b0c16, 0);
+    this.betPill = this.add.rectangle(W / 2, 369, 142, 68, 0x5a1020, 0).setStrokeStyle(4, 0xffe277, 0);
     const betMinusX = W / 2 - 116;
     const betPlusX = W / 2 + 116;
-    this.betMinusShadow = this.add.rectangle(betMinusX, 408, 62, 58, 0x3b0c16, 0);
-    this.betMinus = this.add.rectangle(betMinusX, 400, 62, 58, 0xff4f88, 0).setStrokeStyle(4, 0xffffff, 0);
-    this.betMinusText = this.add.rectangle(betMinusX + 13, 403, 24, 5, 0xffffff, 1).setOrigin(0.5);
-    this.betText = this.add.text(W / 2, 402, "", {
+    this.betMinusShadow = this.add.rectangle(betMinusX, 376, 62, 58, 0x3b0c16, 0);
+    this.betMinus = this.add.rectangle(betMinusX, 369, 62, 58, 0xff4f88, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.betMinusText = this.add.rectangle(betMinusX, 369, 24, 5, 0xffffff, 1).setOrigin(0.5);
+    this.betText = this.add.text(W / 2, 369, "", {
       fontSize: 28,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#2b1248",
       strokeThickness: 4
     }).setOrigin(0.5);
-    this.betPlusShadow = this.add.rectangle(betPlusX, 408, 62, 58, 0x3b0c16, 0);
-    this.betPlus = this.add.rectangle(betPlusX, 400, 62, 58, 0x45d66f, 0).setStrokeStyle(4, 0xffffff, 0);
-    this.betPlusText = this.add.container(betPlusX - 13, 403);
+    this.betPlusShadow = this.add.rectangle(betPlusX, 376, 62, 58, 0x3b0c16, 0);
+    this.betPlus = this.add.rectangle(betPlusX, 369, 62, 58, 0x45d66f, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.betPlusText = this.add.container(betPlusX, 369);
     this.betPlusText.add(this.add.rectangle(0, 0, 24, 5, 0xffffff, 1).setOrigin(0.5));
     this.betPlusText.add(this.add.rectangle(0, 0, 5, 24, 0xffffff, 1).setOrigin(0.5));
-    this.betRangeText = this.add.text(W / 2, 456, `MIN ${MIN_BET}   STEP ${BET_STEP}   MAX ${MAX_BET}`, {
+    this.betRangeText = this.add.text(W / 2, 414, `MIN ${MIN_BET}   STEP ${BET_STEP}   MAX ${MAX_BET}`, {
       fontSize: 13,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1428,33 +1376,34 @@ class CandyOrdersScene extends Phaser.Scene {
     this.betPlus.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.adjustBet(BET_STEP));
 
     this.orderRows = [];
-    this.ordersPanelArt = this.add.image(W / 2, 166, "ui-task-panel-strawberry")
-      .setDisplaySize(W - 12, 172);
+    this.ordersPanelArt = this.add.image(W / 2, 166, "ui-bonus-orders-v2")
+      .setDisplaySize(W - 10, 169)
+      .setDepth(8);
     for (let i = 0; i < 3; i++) {
       const rowLayout = ORDER_ROW_LAYOUT[i];
       const rowCenter = rowLayout.y;
-      const glow = this.add.rectangle(W / 2, rowCenter, W - 20, 39, 0xfff06a, 0).setStrokeStyle(3, 0xffffff, 0);
-      const panel = this.add.rectangle(W / 2, rowCenter, W - 102, 30, 0x5e1422, 0.12);
-      const frameArt = this.add.rectangle(W / 2, rowCenter, W - 30, 39, 0x000000, 0);
-      const dotA = this.add.rectangle(78, rowCenter - 12, 7, 7, i === 0 ? 0xff78bf : i === 1 ? 0x5df2ff : 0xfff06a);
-      const dotB = this.add.rectangle(W - 104, rowCenter + 12, 7, 7, i === 0 ? 0xfff06a : i === 1 ? 0xff78bf : 0x5df2ff);
+      const glow = this.add.rectangle(W / 2, rowCenter, W - 20, 39, 0xfff06a, 0).setStrokeStyle(3, 0xffffff, 0).setDepth(10);
+      const panel = this.add.rectangle(W / 2, rowCenter, W - 102, 34, 0x5e1422, 0.08).setDepth(10);
+      const frameArt = this.add.rectangle(W / 2, rowCenter, W - 30, 39, 0x000000, 0).setDepth(10);
+      const dotA = this.add.rectangle(82, rowCenter - 12, 5, 5, 0xfff06a, 0).setDepth(12);
+      const dotB = this.add.rectangle(W - 98, rowCenter + 12, 5, 5, 0x5df2ff, 0).setDepth(12);
       const icon = this.add.text(42, rowCenter, "", { fontSize: 24 }).setOrigin(0.5).setVisible(false);
-      const label = this.add.text(rowLayout.textX, rowCenter + rowLayout.labelDy, "", { fontSize: 12, fontStyle: "800", color: "#fff" }).setOrigin(0, 0.5);
+      const label = this.add.text(rowLayout.textX, rowCenter + rowLayout.labelDy, "", { fontSize: 12, fontStyle: "800", color: "#fff" }).setOrigin(0, 0.5).setDepth(13);
       const progress = this.add.text(rowLayout.textX, rowCenter + rowLayout.progressDy, "", {
         fontSize: 11,
         fontStyle: "800",
         color: "#fff4b8",
         stroke: "#351352",
         strokeThickness: 2
-      }).setOrigin(0, 0.5);
-      const rewardPlate = this.add.rectangle(rowLayout.rewardX, rowCenter, 82, 23, 0xfff4b8, 0.96)
-        .setStrokeStyle(2, 0xffffff, 0.82);
+      }).setOrigin(0, 0.5).setDepth(13);
+      const rewardPlate = this.add.rectangle(rowLayout.rewardX, rowCenter, 78, 29, 0x4f1020, 0.04)
+        .setStrokeStyle(1, 0xffffff, 0).setDepth(11);
       const reward = this.add.text(rowLayout.rewardX, rowCenter, "", {
         fontSize: 12,
         fontStyle: "900",
-        color: "#8b2cff",
+        color: "#fff4d2",
         align: "center"
-      }).setOrigin(0.5).setFixedSize(78, 18);
+      }).setOrigin(0.5).setFixedSize(74, 18).setDepth(13);
       const keyRewardIcon = this.add.image(W - 56, rowCenter, "sym-key");
       keyRewardIcon.setScale(16 / Math.max(keyRewardIcon.width, keyRewardIcon.height));
       keyRewardIcon.setVisible(false);
@@ -1462,7 +1411,7 @@ class CandyOrdersScene extends Phaser.Scene {
     }
     this.createConveyorUi();
 
-    this.statusText = this.add.text(150, 184, "Choose bet, then start", {
+    this.statusText = this.add.text(150, 181, "Choose bet, then start", {
       fontSize: 13,
       fontStyle: "800",
       color: "#ffffff",
@@ -1470,10 +1419,10 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(41);
 
-    this.keyHudPanel = this.add.rectangle(W - 62, 184, 96, 28, 0x5a1020, 0.9).setStrokeStyle(3, 0xffe277, 0.85);
-    this.keyHudIcon = this.add.image(W - 96, 184, "sym-scatter");
+    this.keyHudPanel = this.add.rectangle(W - 62, 181, 96, 28, 0x5a1020, 0.9).setStrokeStyle(2, 0xffe277, 0.85);
+    this.keyHudIcon = this.add.image(W - 96, 181, "sym-scatter");
     this.keyHudIcon.setScale(27 / Math.max(this.keyHudIcon.width, this.keyHudIcon.height));
-    this.keyHudText = this.add.text(W - 58, 184, "0/3", {
+    this.keyHudText = this.add.text(W - 58, 181, "0/3", {
       fontSize: 15,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1482,9 +1431,9 @@ class CandyOrdersScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.freeUiItems = [];
-    const freeLeftX = 78;
+    const freeLeftX = 74;
     const freeCenterX = W / 2;
-    const freeRightX = W - 78;
+    const freeRightX = W - 74;
     this.freeTitleText = this.add.text(freeLeftX, 48, "", {
       fontSize: 17,
       fontStyle: "900",
@@ -1493,11 +1442,11 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 5,
       align: "center"
     }).setOrigin(0.5).setDepth(41).setFixedSize(86, 24);
-    this.freeHudPanel = this.add.image(W / 2, 52, "ui-bottom-panel-strawberry")
-      .setDisplaySize(W - 20, 70)
-      .setAlpha(0.98)
+    this.freeHudPanel = this.add.image(W / 2, 47, "ui-bonus-hud-v2")
+      .setDisplaySize(W - 14, 91)
+      .setAlpha(1)
       .setDepth(39);
-    this.freeMovesText = this.add.text(freeLeftX, 56, "MOVE:15", {
+    this.freeMovesText = this.add.text(freeLeftX, 36, "MOVE:15", {
       fontSize: 13,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1507,7 +1456,7 @@ class CandyOrdersScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(41).setFixedSize(104, 22);
     this.freeScatterIcon = this.add.image(freeCenterX + 34, 48, "sym-scatter");
     this.freeScatterIcon.setScale(20 / Math.max(this.freeScatterIcon.width, this.freeScatterIcon.height)).setDepth(41).setVisible(false);
-    this.freeScatterText = this.add.text(freeCenterX, 56, "SCATTER:0/3", {
+    this.freeScatterText = this.add.text(freeCenterX, 49, "SCATTER:0/3", {
       fontSize: 13,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1515,7 +1464,7 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 4,
       align: "center"
     }).setOrigin(0.5).setDepth(41).setFixedSize(146, 22);
-    this.freeWinText = this.add.text(freeRightX, 56, "WIN 0", {
+    this.freeWinText = this.add.text(freeRightX, 49, "WIN 0", {
       fontSize: 12,
       fontStyle: "900",
       color: "#fff06a",
@@ -1525,32 +1474,32 @@ class CandyOrdersScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(41).setFixedSize(68, 22);
     this.freeUiItems.push(this.freeHudPanel, this.freeMovesText, this.freeScatterText, this.freeWinText);
 
-    this.mainButton = this.add.rectangle(W / 2, 526, 250, 62, 0xffd94c, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.mainButton = this.add.rectangle(W / 2, 474, 330, 82, 0xffd94c, 0).setStrokeStyle(4, 0xffffff, 0);
     this.mainButton.setInteractive({ useHandCursor: true });
-    this.mainLabel = this.add.text(W / 2, 526, "START", {
+    this.mainLabel = this.add.text(W / 2, 474, "START", {
       fontSize: 30,
       fontStyle: "900",
-      color: "#5c1d7f",
-      stroke: "#ffffff",
-      strokeThickness: 3
+      color: "#fff4d2",
+      stroke: "#7a1022",
+      strokeThickness: 5
     }).setOrigin(0.5);
     this.mainButton.on("pointerdown", () => {
       if (!this.busy && !this.sessionActive) this.startSession();
     });
-    this.bonusBuyButton = this.add.rectangle(W / 2, 627, 250, 52, 0x19b7d4, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.bonusBuyButton = this.add.rectangle(W / 2, 603, 330, 82, 0x19b7d4, 0).setStrokeStyle(4, 0xffffff, 0);
     this.bonusBuyButton.setInteractive({ useHandCursor: true });
-    this.bonusBuyLabel = this.add.text(W / 2, 627, "", {
+    this.bonusBuyLabel = this.add.text(W / 2, 603, "", {
       fontSize: 18,
       fontStyle: "900",
       color: "#ffffff",
-      stroke: "#07354f",
+      stroke: "#7a1022",
       strokeThickness: 4
     }).setOrigin(0.5);
     this.bonusBuyButton.on("pointerdown", () => {
       if (!this.busy && !this.sessionActive) this.runFlow(this.buyBonusGame());
     });
 
-    this.winText = this.add.text(W / 2, 593, "", {
+    this.winText = this.add.text(W / 2, 620, "", {
       fontSize: 18,
       fontStyle: "900",
       color: "#fff9cb",
@@ -1559,15 +1508,15 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5);
 
-    this.statusFrameArt = this.add.image(W / 2, 650, "ui-bottom-panel-strawberry")
-      .setDisplaySize(W - 12, 112)
+    this.statusFrameArt = this.add.image(W / 2, 676, "ui-bottom-hud-v2")
+      .setDisplaySize(W - 14, 78)
       .setDepth(7);
     const leftInfoX = 78;
     const rightInfoX = W - 78;
-    const infoLabelY = 652;
-    const infoValueY = 666;
-    const centerInfoY = 660;
-    this.walletMeterGlow = this.add.rectangle(leftInfoX, 667, 92, 42, 0x8ee8ff, 0).setStrokeStyle(3, 0xffffff, 0).setDepth(8);
+    const infoLabelY = 669;
+    const infoValueY = 684;
+    const centerInfoY = 668;
+    this.walletMeterGlow = this.add.rectangle(leftInfoX, 677, 92, 42, 0x8ee8ff, 0).setStrokeStyle(3, 0xffffff, 0).setDepth(8);
     this.gameWalletText = this.add.text(leftInfoX, infoLabelY, "WALLET", {
       fontSize: 13,
       fontStyle: "900",
@@ -1607,11 +1556,11 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 4,
       align: "center"
     }).setOrigin(0.5).setDepth(11);
-    this.gameBetButton = this.add.rectangle(rightInfoX, 660, 92, 58, 0xffffff, 0.001)
+    this.gameBetButton = this.add.rectangle(rightInfoX, 677, 92, 58, 0xffffff, 0.001)
       .setDepth(12)
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.showGameBetMenu());
-    this.winMeterGlow = this.add.rectangle(W / 2, 666, 126, 40, 0xfff06a, 0).setStrokeStyle(3, 0xfff06a, 0).setDepth(8);
+    this.winMeterGlow = this.add.rectangle(W / 2, 676, 126, 40, 0xfff06a, 0).setStrokeStyle(3, 0xfff06a, 0).setDepth(8);
     this.winMeterPanel = this.add.rectangle(W / 2, centerInfoY, 116, 38, 0x5a1020, 0).setStrokeStyle(2, 0xfff0aa, 0).setDepth(9);
     this.stepsText = this.add.text(W / 2, centerInfoY, "", {
       fontSize: 19,
@@ -1627,15 +1576,15 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#7a2d93",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(11);
-    this.autoButton = this.add.rectangle(W / 2, 670, 108, 24, 0x6f2436, 0.98)
+    this.autoButton = this.add.rectangle(W / 2, 690, 108, 22, 0x6f2436, 0.98)
       .setStrokeStyle(2, 0xffd2df, 0.9)
       .setDepth(12)
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.toggleAutoPlay());
-    this.autoStateDot = this.add.circle(W / 2 - 39, 670, 5, 0xff8bab, 1)
+    this.autoStateDot = this.add.circle(W / 2 - 39, 690, 5, 0xff8bab, 1)
       .setStrokeStyle(2, 0xffffff, 0.85)
       .setDepth(13);
-    this.autoButtonText = this.add.text(W / 2 + 7, 670, "AUTO OFF", {
+    this.autoButtonText = this.add.text(W / 2 + 7, 690, "AUTO OFF", {
       fontSize: 11,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1653,15 +1602,16 @@ class CandyOrdersScene extends Phaser.Scene {
       });
     }
     this.boardFrameItems = [];
-    const boardW = this.cell * COLS;
     const boardH = this.cell * this.rows;
-    const framePadX = this.gameMode === "free" ? 190 : 102;
-    const framePadY = this.gameMode === "free" ? 176 : 152;
-    const frameOffsetY = this.gameMode === "free" ? 4 : 12;
-    const boardFrame = this.add.image(W / 2, this.boardY + boardH / 2 + frameOffsetY, "ui-board-frame-strawberry")
-      .setDisplaySize(boardW + framePadX, boardH + framePadY)
+    const isFree = this.gameMode === "free";
+    const frameW = isFree ? W - 14 : 418;
+    const frameH = isFree ? Math.round(frameW / 0.82) : frameW;
+    const frameKey = isFree ? "ui-bonus-board-frame-v2" : "ui-main-board-frame-v2";
+    const frameOffsetY = isFree ? -3 : 0;
+    const boardFrame = this.add.image(W / 2, this.boardY + boardH / 2 + frameOffsetY, frameKey)
+      .setDisplaySize(frameW, frameH)
       .setDepth(2)
-      .setAlpha(this.gameMode === "free" ? 0.98 : 0.96);
+      .setAlpha(1);
     this.boardFrameItems.push(boardFrame);
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -1718,8 +1668,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.walletCounterTween = null;
     if (this.winCounterTween) this.winCounterTween.stop();
     this.winCounterTween = null;
-    this.winGainText.setText("").setAlpha(1).setY(706);
-    this.walletGainText.setText("").setAlpha(1).setY(706);
+    this.winGainText.setText("").setAlpha(1).setY(640);
+    this.walletGainText.setText("").setAlpha(1).setY(640);
     this.orders = [];
     this.clearSprites();
     this.betAmount = Phaser.Math.Clamp(this.betAmount, MIN_BET, Math.max(MIN_BET, Math.min(MAX_BET, this.wallet)));
@@ -1780,8 +1730,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.walletCounterTween = null;
     if (this.winCounterTween) this.winCounterTween.stop();
     this.winCounterTween = null;
-    this.winGainText.setText("").setAlpha(1).setY(706);
-    this.walletGainText.setText("").setAlpha(1).setY(706);
+    this.winGainText.setText("").setAlpha(1).setY(640);
+    this.walletGainText.setText("").setAlpha(1).setY(640);
     this.winText.setText("");
     this.statusText.setText("Complete orders.");
     this.updateKeyUi();
@@ -1829,8 +1779,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.walletCounterTween = null;
     if (this.winCounterTween) this.winCounterTween.stop();
     this.winCounterTween = null;
-    this.winGainText.setText("").setAlpha(1).setY(706);
-    this.walletGainText.setText("").setAlpha(1).setY(706);
+    this.winGainText.setText("").setAlpha(1).setY(640);
+    this.walletGainText.setText("").setAlpha(1).setY(640);
     this.winText.setText("");
     this.orders = [];
     this.updateBetUi();
@@ -1875,16 +1825,15 @@ class CandyOrdersScene extends Phaser.Scene {
     [this.logoShadow, this.titleText, this.logoRibbon, this.logoSubText].forEach((item) => item.setVisible(false));
     if (this.titleLogoArt) this.titleLogoArt.setVisible(mode === "bet");
     this.freeSceneWash.setVisible(isFree);
-    this.ordersHeader.setVisible(mode === "game" || isFree);
+    this.ordersHeader.setVisible(isFree);
     this.ordersHeader.setText(isFree ? "BONUS ORDERS" : "");
-    this.ordersHeader.setY(isFree ? 88 : 88);
+    this.ordersHeader.setY(96).setDepth(15);
     if (this.ordersPanelArt) {
-      const conveyorMain = mode === "game" && !isFree;
       this.ordersPanelArt
-        .setVisible(mode === "game" || isFree)
-        .setPosition(W / 2, conveyorMain ? 100 : 166)
-        .setDisplaySize(conveyorMain ? W - 2 : W - 12, conveyorMain ? 196 : 172)
-        .setDepth(conveyorMain ? 9 : 0);
+        .setVisible(isFree)
+        .setPosition(W / 2, 166)
+        .setDisplaySize(W - 10, 169)
+        .setDepth(8);
     }
     const showClassicOrders = isFree;
     this.orderRows.forEach((row) => Object.entries(row).forEach(([key, item]) => {
@@ -1945,7 +1894,7 @@ class CandyOrdersScene extends Phaser.Scene {
         ease: changed ? "Back.Out" : "Sine.Out"
       });
     });
-    this.burstAt(delta > 0 ? W / 2 + 116 : W / 2 - 116, 378, changed ? 0xffe277 : 0x8ee8ff);
+    this.burstAt(delta > 0 ? W / 2 + 116 : W / 2 - 116, 369, changed ? 0xffe277 : 0x8ee8ff);
   }
 
   animateWinMeter(amount) {
@@ -1957,8 +1906,8 @@ class CandyOrdersScene extends Phaser.Scene {
     const counter = { value: this.displayedWin };
     const target = this.sessionReward;
     this.playCoinSpraySound();
-    this.stepsText.setY(655).setFontSize(16).setText(`WIN ${Math.round(this.displayedWin)}`);
-    this.winGainText.setText(`+${amount}`).setAlpha(1).setScale(0.7).setY(692);
+    this.stepsText.setY(668).setFontSize(16).setText(`WIN ${Math.round(this.displayedWin)}`);
+    this.winGainText.setText(`+${amount}`).setAlpha(1).setScale(0.7).setY(640);
     this.winMeterGlow.setFillStyle(0xfff06a, 0.34).setStrokeStyle(4, 0xffffff, 0.95).setAlpha(1).setScale(1);
     this.tweens.killTweensOf([this.winMeterGlow, this.winMeterPanel, this.stepsText, this.winGainText]);
     this.tweens.add({
@@ -1979,13 +1928,13 @@ class CandyOrdersScene extends Phaser.Scene {
     });
     this.tweens.add({
       targets: this.winGainText,
-      y: 662,
+      y: 612,
       scale: 1.15,
       alpha: 0,
       delay: 650,
       duration: 850,
       ease: "Cubic.Out",
-      onComplete: () => this.winGainText.setY(692)
+      onComplete: () => this.winGainText.setY(640)
     });
     this.winCounterTween = this.tweens.add({
       targets: counter,
@@ -2066,7 +2015,7 @@ class CandyOrdersScene extends Phaser.Scene {
     if (this.walletCounterTween) this.walletCounterTween.stop();
     const counter = { value: this.displayedWallet };
     const target = this.wallet;
-    this.walletGainText.setText(`+${amount}`).setAlpha(1).setScale(0.7).setY(692);
+    this.walletGainText.setText(`+${amount}`).setAlpha(1).setScale(0.7).setY(640);
     this.walletMeterGlow.setFillStyle(0x8ee8ff, 0.34).setStrokeStyle(3, 0xffffff, 0.95).setAlpha(1).setScale(1);
     this.tweens.killTweensOf([this.walletMeterGlow, this.gameWalletText, this.gameWalletValueText, this.walletGainText]);
     this.tweens.add({
@@ -2087,13 +2036,13 @@ class CandyOrdersScene extends Phaser.Scene {
     });
     this.tweens.add({
       targets: this.walletGainText,
-      y: 648,
+      y: 612,
       scale: 1.12,
       alpha: 0,
       delay: 900,
       duration: 900,
       ease: "Cubic.Out",
-      onComplete: () => this.walletGainText.setY(692)
+      onComplete: () => this.walletGainText.setY(640)
     });
     this.walletCounterTween = this.tweens.add({
       targets: counter,
@@ -2139,20 +2088,20 @@ class CandyOrdersScene extends Phaser.Scene {
 
   updateWinMeterLabel() {
     if (this.winCounterTween) {
-      this.stepsText.setY(655).setFontSize(16).setText(`WIN ${Math.round(this.displayedWin)}`);
+      this.stepsText.setY(668).setFontSize(16).setText(`WIN ${Math.round(this.displayedWin)}`);
       return;
     }
-    this.stepsText.setY(648).setFontSize(10).setText(`LAST WIN: ${this.lastWinAmount}`);
+    this.stepsText.setY(668).setFontSize(10).setText(`LAST WIN: ${this.lastWinAmount}`);
   }
 
   updateAutoUi() {
     if (!this.autoButton || !this.autoButtonText || !this.autoStateDot) return;
     const isFree = this.currentUiMode === "free";
     const visible = (this.currentUiMode === "game" || isFree) && !this.autoUiSuppressed;
-    const buttonX = isFree ? 62 : W / 2;
-    const buttonY = isFree ? 96 : 670;
-    this.autoButton.setPosition(buttonX, buttonY).setDisplaySize(isFree ? 88 : 108, isFree ? 21 : 24);
-    this.autoStateDot.setPosition(buttonX - (isFree ? 31 : 39), buttonY);
+    const buttonX = isFree ? 74 : W / 2;
+    const buttonY = isFree ? 66 : 690;
+    this.autoButton.setPosition(buttonX, buttonY).setDisplaySize(isFree ? 90 : 108, isFree ? 18 : 24);
+    this.autoStateDot.setPosition(buttonX - (isFree ? 32 : 39), buttonY);
     this.autoButtonText.setPosition(buttonX + (isFree ? 6 : 7), buttonY).setFontSize(isFree ? 10 : 11);
     this.autoButton.setVisible(visible);
     this.autoStateDot.setVisible(visible);
@@ -4456,8 +4405,8 @@ class CandyOrdersScene extends Phaser.Scene {
       row.reward.setPosition(layout.rewardX, rowCenter);
       if (row.rewardPlate) {
         row.rewardPlate.setPosition(layout.rewardX, rowCenter);
-        row.rewardPlate.setDisplaySize(order.scope === "free" ? 82 : 82, 23);
-        row.rewardPlate.setFillStyle(order.scope === "free" && order.gold ? 0xfff06a : 0xfff4b8, 0.96);
+        row.rewardPlate.setDisplaySize(78, 29);
+        row.rewardPlate.setFillStyle(order.scope === "free" && order.gold ? 0xffd94c : 0x4f1020, order.scope === "free" && order.gold ? 0.16 : 0.04);
       }
       const range = this.orderMultRange(order);
       const shownRange = order.scope === "free" && order.gold
@@ -4550,24 +4499,23 @@ class CandyOrdersScene extends Phaser.Scene {
 
   createConveyorUi() {
     this.conveyorUiItems = [];
+    const frame = this.add.image(W / 2, 96, "ui-conveyor-panel-v2")
+      .setDisplaySize(W - 10, 160)
+      .setDepth(9);
+    this.conveyorUiItems.push(frame);
     CONVEYOR_LANE_Y.forEach((y, lane) => {
-      const track = this.add.rectangle(W / 2, y, W - 36, 35, 0x3a0b18, 0.42)
-        .setStrokeStyle(1, lane === 1 ? 0x8ee8ff : 0xffb1d2, 0.42)
-        .setDepth(14);
-      const danger = this.add.rectangle(CONVEYOR_LEFT_X + 12, y, 25, 33, 0xff3f63, 0.22)
-        .setStrokeStyle(2, 0xffe277, 0.52)
+      const danger = this.add.rectangle(CONVEYOR_LEFT_X + 15, y, 21, 36, 0xff3f63, 0.12)
+        .setStrokeStyle(1, 0xffe277, 0.4)
         .setDepth(15);
-      const exitLine = this.add.rectangle(CONVEYOR_LEFT_X + 25, y, 3, 32, 0xffe277, 0.82).setDepth(16);
-      const entryLine = this.add.rectangle(CONVEYOR_RIGHT_X - 2, y, 3, 32, 0x8ee8ff, 0.68).setDepth(16);
-      this.conveyorUiItems.push(track, danger, exitLine, entryLine);
+      this.conveyorUiItems.push(danger);
     });
   }
 
   conveyorIconKey(order) {
-    if (order.kind === "color") return this.symbolKey({ type: order.type, special: null });
-    if (order.kind === "chocolate") return "sym-chocolate";
-    if (order.kind === "cascade") return "sym-cascade-order";
-    return "sym-any-order";
+    if (order.kind === "color") return `order-${order.type}`;
+    if (order.kind === "chocolate") return "order-chocolate";
+    if (order.kind === "cascade" || order.kind === "combo") return "order-cascade";
+    return "order-any";
   }
 
   conveyorTargetLabel(order) {
@@ -4585,7 +4533,7 @@ class CandyOrdersScene extends Phaser.Scene {
     const shadow = this.add.rectangle(1, 2, 48, 34, 0x21060d, 0.8);
     const plate = this.add.rectangle(0, 0, 48, 34, fill, 0.98).setStrokeStyle(2, stroke, 1);
     const icon = this.add.image(-9, -3, this.conveyorIconKey(order));
-    icon.setScale(24 / Math.max(icon.width, icon.height));
+    icon.setScale(27 / Math.max(icon.width, icon.height));
     const progress = this.add.text(11, 6, "0/0", {
       fontSize: 9,
       fontStyle: "900",
@@ -4710,43 +4658,7 @@ class CandyOrdersScene extends Phaser.Scene {
       row.iconGroup.add(iconImg);
       return iconImg;
     };
-    if (order.kind === "color") {
-      addIcon(this.symbolKey({ type: order.type, special: null }), x, y, 31);
-    } else if (order.kind === "chocolate") {
-      addIcon("sym-chocolate", x, y, 31);
-    } else if (order.kind === "any") {
-      ["sym-red", "sym-blue", "sym-yellow"].forEach((key, idx) => {
-        addIcon(key, x - 13 + idx * 13, y + (idx === 1 ? -4 : 3), 19);
-      });
-    } else if (order.kind === "cascade") {
-      ["sym-stripe-row", "sym-bomb", "sym-chocolate"].forEach((key, idx) => {
-        addIcon(key, x - 13 + idx * 13, y - 5 + idx * 5, 19);
-      });
-    } else if (order.kind === "combo") {
-      const keys = {
-        any: ["sym-stripe-row", "sym-bomb"],
-        stripeStripe: ["sym-stripe-row", "sym-stripe-col"],
-        stripeBomb: ["sym-stripe-row", "sym-bomb"],
-        bombBomb: ["sym-bomb", "sym-bomb"],
-        chocolateSpecial: ["sym-chocolate", "sym-stripe-row"]
-      }[order.comboType] || ["sym-stripe-row", "sym-bomb"];
-      keys.forEach((key, idx) => {
-        addIcon(key, x - 10 + idx * 20, y, 22);
-      });
-      const plus = this.add.text(x, y, "+", {
-        fontSize: 11,
-        fontStyle: "900",
-        color: "#fff06a",
-        stroke: "#351352",
-        strokeThickness: 3
-      }).setOrigin(0.5).setDepth(19);
-      plus.isOrderIcon = true;
-      row.iconGroup.add(plus);
-    } else {
-      ["sym-red", "sym-blue", "sym-yellow"].forEach((key, idx) => {
-        addIcon(key, x - 13 + idx * 13, y + (idx === 1 ? -4 : 3), 19);
-      });
-    }
+    addIcon(this.conveyorIconKey(order), x, y, 36);
     row.iconGroup.getChildren().forEach((child) => {
       child.isOrderIcon = true;
       child.setVisible(this.sessionActive);
@@ -5378,8 +5290,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.walletCounterTween = null;
     if (this.winCounterTween) this.winCounterTween.stop();
     this.winCounterTween = null;
-    this.winGainText.setText("").setAlpha(1).setY(706);
-    this.walletGainText.setText("").setAlpha(1).setY(706);
+    this.winGainText.setText("").setAlpha(1).setY(640);
+    this.walletGainText.setText("").setAlpha(1).setY(640);
     this.winText.setText("");
     this.statusText.setText("BET changed. New orders.");
     this.updateKeyUi();
