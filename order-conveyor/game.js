@@ -73,6 +73,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.load.image("ui-bottom-hud-v2", "assets/ui-v2/bottom-hud.png?v=20260814uiv2");
     this.load.image("ui-main-board-frame-v2", "assets/ui-v2/main-board-frame.png?v=20260814uiv2");
     this.load.image("ui-bonus-board-frame-v2", "assets/ui-v2/bonus-board-frame.png?v=20260814uiv2");
+    this.load.image("ui-main-board-backdrop-v2", "assets/ui-v2/main-board-backdrop.png?v=20260814backdrop");
+    this.load.image("ui-bonus-board-backdrop-v2", "assets/ui-v2/bonus-board-backdrop.png?v=20260814backdrop");
     this.load.image("ui-bonus-hud-v2", "assets/ui-v2/bonus-hud.png?v=20260814uiv2");
     this.load.image("ui-bonus-orders-v2", "assets/ui-v2/bonus-orders.png?v=20260814uiv2");
     TYPES.forEach((type) => this.load.image(`order-${type}`, `assets/ui-v2/order-${type}.png?v=20260814uiv2`));
@@ -1608,6 +1610,14 @@ class CandyOrdersScene extends Phaser.Scene {
     const frameH = isFree ? Math.round(frameW / 0.82) : frameW;
     const frameKey = isFree ? "ui-bonus-board-frame-v2" : "ui-main-board-frame-v2";
     const frameOffsetY = isFree ? -3 : 0;
+    const backdropW = isFree ? 388 : 372;
+    const backdropH = isFree ? Math.round(backdropW / 0.82) : backdropW;
+    const backdropKey = isFree ? "ui-bonus-board-backdrop-v2" : "ui-main-board-backdrop-v2";
+    const backdrop = this.add.image(W / 2, this.boardY + boardH / 2 + frameOffsetY, backdropKey)
+      .setDisplaySize(backdropW, backdropH)
+      .setDepth(0.7)
+      .setAlpha(1);
+    this.boardFrameItems.push(backdrop);
     const boardFrame = this.add.image(W / 2, this.boardY + boardH / 2 + frameOffsetY, frameKey)
       .setDisplaySize(frameW, frameH)
       .setDepth(2)
@@ -1616,7 +1626,7 @@ class CandyOrdersScene extends Phaser.Scene {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < COLS; c++) {
         const tileInset = this.gameMode === "free" ? 4 : 4;
-        this.boardFrameItems.push(this.add.rectangle(this.cellX(c), this.cellY(r), this.cell - tileInset, this.cell - tileInset, 0x4f1020, 0.54).setStrokeStyle(1, 0xffffff, 0.16).setDepth(1));
+        this.boardFrameItems.push(this.add.rectangle(this.cellX(c), this.cellY(r), this.cell - tileInset, this.cell - tileInset, 0x4f1020, 0.2).setStrokeStyle(1, 0xfff4d2, 0.17).setDepth(1));
       }
     }
   }
