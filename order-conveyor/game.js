@@ -1656,8 +1656,8 @@ class CandyOrdersScene extends Phaser.Scene {
     const boardW = this.cell * COLS;
     const boardH = this.cell * this.rows;
     const framePadX = this.gameMode === "free" ? 190 : 102;
-    const framePadY = this.gameMode === "free" ? 176 : 112;
-    const frameOffsetY = this.gameMode === "free" ? 4 : 4;
+    const framePadY = this.gameMode === "free" ? 176 : 152;
+    const frameOffsetY = this.gameMode === "free" ? 4 : 12;
     const boardFrame = this.add.image(W / 2, this.boardY + boardH / 2 + frameOffsetY, "ui-board-frame-strawberry")
       .setDisplaySize(boardW + framePadX, boardH + framePadY)
       .setDepth(2)
