@@ -58,6 +58,10 @@
     conveyorRushChance: 0.08,
     conveyorGoldenChance: 0.045,
     conveyorScatterRewardChance: 0.035,
+    mainOrderChainMultipliers: [1.00, 1.25, 1.50, 2.00],
+    bonusOrderChainMultipliers: [1.00, 1.50, 2.00, 3.00],
+    bonusConveyorShiftPerMove: 14,
+    bonusConveyorOrdersPerLane: 4,
     conveyorTierTickets: [
       { label: "Easy", weight: 48 },
       { label: "Medium", weight: 36 },
@@ -78,6 +82,46 @@
         { kind: "any", needMin: 155, needMax: 235, multMin: 4, multMax: 7 },
         { kind: "cascade", needMin: 14, needMax: 22, multMin: 5, multMax: 8 },
         { kind: "chocolate", needMin: 2, needMax: 4, multMin: 6, multMax: 10 }
+      ]
+    ],
+    bonusConveyorOrderPools: [
+      [
+        { kind: "color", needMin: 18, needMax: 30 },
+        { kind: "any", needMin: 75, needMax: 110 }
+      ],
+      [
+        { kind: "color", needMin: 35, needMax: 55 },
+        { kind: "any", needMin: 140, needMax: 220 },
+        { kind: "cascade", needMin: 8, needMax: 13 }
+      ],
+      [
+        { kind: "color", needMin: 60, needMax: 95 },
+        { kind: "any", needMin: 260, needMax: 420 },
+        { kind: "cascade", needMin: 18, needMax: 28 },
+        { kind: "chocolate", needMin: 2, needMax: 4 }
+      ]
+    ],
+    bonusConveyorPayoutTickets: [
+      [
+        { label: "Standard", weight: 95.00, min: 2, max: 4 },
+        { label: "Sweet", weight: 4.00, min: 8, max: 16 },
+        { label: "Big", weight: 0.80, min: 35, max: 80 },
+        { label: "Mega", weight: 0.18, min: 100, max: 250 },
+        { label: "Max", weight: 0.02, min: 500, max: 1000 }
+      ],
+      [
+        { label: "Standard", weight: 92.00, min: 5, max: 9 },
+        { label: "Sweet", weight: 6.00, min: 15, max: 30 },
+        { label: "Big", weight: 1.60, min: 50, max: 120 },
+        { label: "Mega", weight: 0.35, min: 150, max: 400 },
+        { label: "Max", weight: 0.05, min: 600, max: 1000 }
+      ],
+      [
+        { label: "Standard", weight: 87.00, min: 10, max: 18 },
+        { label: "Sweet", weight: 9.00, min: 25, max: 60 },
+        { label: "Big", weight: 3.00, min: 80, max: 180 },
+        { label: "Mega", weight: 0.90, min: 250, max: 600 },
+        { label: "Max", weight: 0.10, min: 700, max: 1000 }
       ]
     ],
     mainOrderNeedBands: [

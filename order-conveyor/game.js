@@ -30,6 +30,7 @@ const ORDER_ROW_LAYOUT = [
   { y: 213, iconX: 60, textX: 104, rewardX: W - 58, labelDy: -6, progressDy: 8 }
 ];
 const CONVEYOR_LANE_Y = [54, 101, 148];
+const BONUS_CONVEYOR_LANE_Y = [121, 166, 211];
 const CONVEYOR_LEFT_X = 47;
 const CONVEYOR_RIGHT_X = W - 52;
 const LABELS = {
@@ -571,7 +572,7 @@ class CandyOrdersScene extends Phaser.Scene {
   showOrderCompleteFx(index, order, reward) {
     const conveyorView = order?.conveyorId ? this.conveyorOrderViews.get(order.conveyorId) : null;
     const x = conveyorView?.container.x ?? W / 2;
-    const y = order?.conveyorId ? CONVEYOR_LANE_Y[order.lane] : this.orderRowY(index);
+    const y = order?.conveyorId ? this.conveyorLaneY(order.lane, order) : this.orderRowY(index);
     const row = this.orderRows[index];
     if (!order?.conveyorId) this.setOrderNearState(row, false);
     this.playOrderCompleteSound();
@@ -665,7 +666,7 @@ class CandyOrdersScene extends Phaser.Scene {
     const sourceOrder = this.orders[orderIndex];
     const sourceView = sourceOrder?.conveyorId ? this.conveyorOrderViews.get(sourceOrder.conveyorId) : null;
     const startX = sourceView?.container.x ?? W - 62;
-    const startY = sourceOrder?.conveyorId ? CONVEYOR_LANE_Y[sourceOrder.lane] : (this.orderRows[orderIndex]?.rowCenter || (122 + orderIndex * 43));
+    const startY = sourceOrder?.conveyorId ? this.conveyorLaneY(sourceOrder.lane, sourceOrder) : (this.orderRows[orderIndex]?.rowCenter || (122 + orderIndex * 43));
     const icon = this.add.image(startX, startY, "sym-scatter").setDepth(34);
     icon.setScale(23 / Math.max(icon.width, icon.height));
     icon.isFxSprite = true;
@@ -860,6 +861,8 @@ class CandyOrdersScene extends Phaser.Scene {
     const depth = 120;
     const visible = completions.slice(0, 6);
     const single = visible.length === 1;
+    const chainMult = Math.max(1, ...completions.map((item) => Number(item.chainMult || 1)));
+    const isBonusChain = completions.some((item) => item.order?.scope === "free");
     const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x16091f, 0.55).setDepth(depth);
     const panel = this.add.rectangle(W / 2, 421, W - 22, single ? 306 : 366, 0x4a1a6b, 0.98)
       .setStrokeStyle(6, 0xfff06a, 1)
@@ -872,23 +875,32 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#b218c9",
       strokeThickness: 7
     }).setOrigin(0.5).setDepth(depth + 3);
-    const items = [veil, panel, title];
+    const chain = this.add.text(W / 2, single ? 339 : 307, chainMult > 1 ? `${isBonusChain ? "BONUS " : ""}ORDER CHAIN x${chainMult}` : "", {
+      fontSize: single ? 18 : 17,
+      fontStyle: "900",
+      color: "#8ee8ff",
+      stroke: "#351352",
+      strokeThickness: 5
+    }).setOrigin(0.5).setDepth(depth + 4);
+    const items = [veil, panel, title, chain];
     const resultItems = [];
     visible.forEach((completion, index) => {
+      const completionGold = !!(completion.order?.golden || completion.order?.gold);
       const col = index % 2;
       const row = Math.floor(index / 2);
       const x = single ? W / 2 : 121 + col * 208;
-      const y = single ? 382 : 337 + row * 67;
-      const resultPlate = this.add.rectangle(x, y, single ? 238 : 184, single ? 116 : 54, completion.order?.golden ? 0x7b5410 : 0x65162a, 0.96)
-        .setStrokeStyle(3, completion.order?.golden ? 0xfff06a : 0x8ee8ff, 0.95)
+      const y = single ? 407 : 344 + row * 67;
+      const resultPlate = this.add.rectangle(x, y, single ? 238 : 184, single ? 116 : 54, completionGold ? 0x7b5410 : 0x65162a, 0.96)
+        .setStrokeStyle(3, completionGold ? 0xfff06a : 0x8ee8ff, 0.95)
         .setDepth(depth + 2);
       const icon = this.add.image(x - (single ? 54 : 57), y, this.conveyorIconKey(completion.order)).setDepth(depth + 4);
       const iconSize = single ? 74 : 38;
       icon.setScale(iconSize / Math.max(icon.width, icon.height));
-      const result = this.add.text(x + (single ? 36 : 24), y, completion.reward > 0 ? `+${completion.rollMult}x` : "SCATTER", {
+      const resultLabel = completion.reward > 0 ? `+${completion.rollMult}x` : completion.scatter ? "SCATTER" : "MAXED";
+      const result = this.add.text(x + (single ? 36 : 24), y, resultLabel, {
         fontSize: completion.reward > 0 ? (single ? 44 : 23) : (single ? 21 : 13),
         fontStyle: "900",
-        color: completion.order?.golden ? "#fff06a" : "#ffffff",
+        color: completionGold ? "#fff06a" : "#ffffff",
         stroke: "#7a2d93",
         strokeThickness: single ? 8 : 6
       }).setOrigin(0.5).setDepth(depth + 4);
@@ -896,14 +908,14 @@ class CandyOrdersScene extends Phaser.Scene {
       items.push(resultPlate, icon, result);
     });
     const extraCount = Math.max(0, completions.length - visible.length);
-    const extra = this.add.text(W / 2, single ? 474 : 537, extraCount ? `+${extraCount} MORE ORDERS` : "", {
+    const extra = this.add.text(W / 2, single ? 486 : 548, extraCount ? `+${extraCount} MORE ORDERS` : "", {
       fontSize: 15,
       fontStyle: "900",
       color: "#8ee8ff",
       stroke: "#351352",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(depth + 4);
-    const total = this.add.text(W / 2, single ? 520 : 574, `TOTAL +${totalReward}`, {
+    const total = this.add.text(W / 2, single ? 530 : 580, `TOTAL +${totalReward}`, {
       fontSize: single ? 40 : 36,
       fontStyle: "900",
       color: "#fff06a",
@@ -919,7 +931,7 @@ class CandyOrdersScene extends Phaser.Scene {
     panel.setScale(0.78);
     total.setScale(0.5);
     this.tweens.add({ targets: veil, alpha: 0.55, duration: 180 });
-    this.tweens.add({ targets: [panel, title], alpha: 1, scale: 1, duration: 280, ease: "Back.Out" });
+    this.tweens.add({ targets: [panel, title, chain], alpha: 1, scale: 1, duration: 280, ease: "Back.Out" });
     resultItems.forEach((item, index) => {
       this.time.delayedCall(220 + Math.floor(index / 3) * 140, () => {
         item.setAlpha(1).setScale(item.scaleX * 1.18, item.scaleY * 1.18);
@@ -1843,16 +1855,16 @@ class CandyOrdersScene extends Phaser.Scene {
     if (this.titleLogoArt) this.titleLogoArt.setVisible(mode === "bet");
     this.freeSceneWash.setVisible(isFree);
     this.ordersHeader.setVisible(isFree);
-    this.ordersHeader.setText(isFree ? "BONUS ORDERS" : "");
-    this.ordersHeader.setY(96).setDepth(15);
+    this.ordersHeader.setText(isFree ? "BONUS QUEUE" : "");
+    this.ordersHeader.setY(98).setDepth(30);
     if (this.ordersPanelArt) {
       this.ordersPanelArt
-        .setVisible(isFree)
+        .setVisible(false)
         .setPosition(W / 2, 166)
         .setDisplaySize(W - 10, 169)
         .setDepth(8);
     }
-    const showClassicOrders = isFree;
+    const showClassicOrders = false;
     this.orderRows.forEach((row) => Object.entries(row).forEach(([key, item]) => {
       if (item && item.setVisible) item.setVisible(key === "keyRewardIcon" ? false : showClassicOrders);
     }));
@@ -1861,7 +1873,8 @@ class CandyOrdersScene extends Phaser.Scene {
         row.iconGroup.getChildren().forEach((child) => child.setVisible(showClassicOrders));
       }
     });
-    this.setConveyorVisible(mode === "game" && !isFree);
+    this.layoutConveyorUi(isFree);
+    this.setConveyorVisible(mode === "game" || isFree);
     this.statusText.setVisible(mode === "game");
     this.statusText.setX(isFree ? W / 2 : 170);
     this.winText.setVisible(mode === "game");
@@ -2234,6 +2247,19 @@ class CandyOrdersScene extends Phaser.Scene {
     return { range, mult: Phaser.Math.Between(range.min, range.max) };
   }
 
+  orderChainMultiplier(completedCount, bonus = this.gameMode === "free") {
+    const table = bonus
+      ? MATH_CONFIG.bonusOrderChainMultipliers
+      : MATH_CONFIG.mainOrderChainMultipliers;
+    if (!Array.isArray(table) || !table.length) return 1;
+    const index = Phaser.Math.Clamp(Math.max(1, completedCount) - 1, 0, table.length - 1);
+    return Math.max(1, Number(table[index] || 1));
+  }
+
+  roundMultiplier(value) {
+    return Number(Math.max(0, Number(value) || 0).toFixed(2));
+  }
+
   rollBandValue(bands, fallback = 1) {
     if (!Array.isArray(bands) || !bands.length) return fallback;
     const total = bands.reduce((sum, band) => sum + Number(band.weight || 0), 0);
@@ -2316,7 +2342,8 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   conveyorOrderWidth(order) {
-    const tierBase = { Easy: 62, Medium: 72, Hard: 82 }[order?.tier] || 66;
+    const tierKey = String(order?.tier || "Easy").replace(/^Bonus\s+/i, "");
+    const tierBase = { Easy: 62, Medium: 72, Hard: 82 }[tierKey] || 66;
     const kindBonus = { any: 3, cascade: 5, combo: 5, chocolate: 7 }[order?.kind] || 0;
     const need = Number(order?.need || 0);
     const needBonus = need >= 150 ? 7 : need >= 90 ? 5 : need >= 48 ? 4 : need >= 28 ? 2 : 0;
@@ -2421,8 +2448,57 @@ class CandyOrdersScene extends Phaser.Scene {
     this.updateConveyorOrders();
   }
 
+  spawnBonusConveyorOrder(lane) {
+    const targetCount = Math.max(2, Number(MATH_CONFIG.bonusConveyorOrdersPerLane || 4));
+    const laneOrders = this.orders.filter((order) => order.scope === "free" && order.lane === lane);
+    if (laneOrders.length >= targetCount) return null;
+    const rightEdge = W - 21;
+    const rightmostEdge = laneOrders.reduce(
+      (max, order) => Math.max(max, order.trackX + Number(order.cardWidth || 62) / 2),
+      -Infinity
+    );
+    if (Number.isFinite(rightmostEdge) && rightmostEdge > rightEdge - 100) return null;
+    const tier = ["Bonus Easy", "Bonus Medium", "Bonus Hard"][lane] || "Bonus Easy";
+    const order = this.createFreeOrder(tier, lane, 0);
+    order.trackX = rightEdge - order.cardWidth / 2;
+    this.orders.push(order);
+    if (this.currentUiMode === "free") this.createConveyorOrderView(order);
+    return order;
+  }
+
+  async advanceBonusConveyorOrders() {
+    if (this.gameMode !== "free") return;
+    const shift = Math.max(1, Number(MATH_CONFIG.bonusConveyorShiftPerMove || 14));
+    const cardGap = 6;
+    for (let lane = 0; lane < 3; lane++) {
+      const laneOrders = this.orders
+        .filter((order) => order.scope === "free" && order.lane === lane)
+        .sort((a, b) => a.trackX - b.trackX);
+      let nextLeftEdge = CONVEYOR_LEFT_X;
+      laneOrders.forEach((order) => {
+        const width = Number(order.cardWidth || 62);
+        const protectedCenter = nextLeftEdge + width / 2;
+        order.trackX = Math.max(protectedCenter, order.trackX - shift);
+        nextLeftEdge = order.trackX + width / 2 + cardGap;
+        const view = this.conveyorOrderViews.get(order.conveyorId);
+        if (view) {
+          this.tweens.add({
+            targets: view.container,
+            x: order.trackX,
+            y: this.conveyorLaneY(order.lane, order),
+            duration: 220,
+            ease: "Cubic.InOut"
+          });
+        }
+      });
+      this.spawnBonusConveyorOrder(lane);
+    }
+    await this.wait(this.autoPlayEnabled ? 130 : 210);
+    this.updateConveyorOrders();
+  }
+
   showConveyorExpiredFx(order) {
-    const y = CONVEYOR_LANE_Y[order.lane];
+    const y = this.conveyorLaneY(order.lane, order);
     const missed = this.add.text(Math.max(CONVEYOR_LEFT_X + 18, order.trackX), y, "MISSED", {
       fontSize: 11,
       fontStyle: "900",
@@ -2475,13 +2551,14 @@ class CandyOrdersScene extends Phaser.Scene {
     this.popup = this.add.group();
     const depth = 132;
     const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x170811, 0.64).setDepth(depth).setInteractive();
-    const panel = this.add.rectangle(W / 2, 356, W - 42, 278, order.golden ? 0x7b5410 : 0x5e1422, 0.99)
-      .setStrokeStyle(5, order.golden ? 0xfff06a : 0x8ee8ff, 1)
+    const isGold = !!(order.golden || order.gold);
+    const panel = this.add.rectangle(W / 2, 356, W - 42, 278, isGold ? 0x7b5410 : 0x5e1422, 0.99)
+      .setStrokeStyle(5, isGold ? 0xfff06a : 0x8ee8ff, 1)
       .setDepth(depth + 1);
-    const title = this.add.text(W / 2, 247, order.golden ? "GOLD ORDER" : `${order.tier.toUpperCase()} ORDER`, {
+    const title = this.add.text(W / 2, 247, isGold ? "GOLD ORDER" : `${order.tier.toUpperCase()} ORDER`, {
       fontSize: 30,
       fontStyle: "900",
-      color: order.golden ? "#fff06a" : "#ffffff",
+      color: isGold ? "#fff06a" : "#ffffff",
       stroke: "#351352",
       strokeThickness: 7
     }).setOrigin(0.5).setDepth(depth + 2);
@@ -2502,7 +2579,13 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#351352",
       strokeThickness: 6
     }).setOrigin(0.5).setDepth(depth + 2);
-    const range = this.orderMultRange(order);
+    const baseRange = this.orderMultRange(order);
+    const range = order.scope === "free" && order.gold
+      ? {
+        min: Math.max(1, Math.round(baseRange.min * Number(order.goldMult || 1.5))),
+        max: Math.max(1, Math.round(baseRange.max * Number(order.goldMult || 1.5)))
+      }
+      : baseRange;
     const rewardLabel = order.rewardType === "coinsScatter"
       ? `${range.min}-${range.max}x + SCATTER`
       : `${range.min}-${range.max}x`;
@@ -2513,7 +2596,9 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#7a2d93",
       strokeThickness: 6
     }).setOrigin(0.5).setDepth(depth + 2);
-    const timeRatio = Phaser.Math.Clamp((order.trackX - CONVEYOR_LEFT_X) / (CONVEYOR_RIGHT_X - CONVEYOR_LEFT_X), 0, 1);
+    const timeRatio = order.scope === "free"
+      ? 1
+      : Phaser.Math.Clamp((order.trackX - CONVEYOR_LEFT_X) / (CONVEYOR_RIGHT_X - CONVEYOR_LEFT_X), 0, 1);
     const timeBg = this.add.rectangle(W / 2 - 157, 447, 314, 11, 0x220711, 0.95).setOrigin(0, 0.5).setDepth(depth + 2);
     const timeBar = this.add.rectangle(W / 2 - 157, 447, 314, 11, timeRatio < 0.22 ? 0xff5372 : 0x49d6a6, 1)
       .setOrigin(0, 0.5)
@@ -2552,29 +2637,57 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   generateFreeOrders() {
-    this.orders = [
-      this.createFreeOrder("Bonus Easy"),
-      this.createFreeOrder("Bonus Medium"),
-      this.createFreeOrder("Bonus Hard")
-    ];
+    this.clearConveyorViews();
+    this.orders = [];
+    this.conveyorOrderSequence = 0;
+    this.conveyorSpawnLane = 0;
+    const cardGap = 6;
+    const ordersPerLane = Math.max(2, Number(MATH_CONFIG.bonusConveyorOrdersPerLane || 4));
+    const tiers = ["Bonus Easy", "Bonus Medium", "Bonus Hard"];
+    for (let lane = 0; lane < 3; lane++) {
+      let rightEdge = W - 21;
+      for (let index = 0; index < ordersPerLane; index++) {
+        const order = this.createFreeOrder(tiers[lane], lane, 0);
+        const leftEdge = rightEdge - order.cardWidth;
+        if (index >= 3 && leftEdge < CONVEYOR_LEFT_X - 8) break;
+        order.trackX = rightEdge - order.cardWidth / 2;
+        this.orders.push(order);
+        rightEdge = leftEdge - cardGap;
+      }
+    }
   }
 
-  createFreeOrder(tier) {
+  createFreeOrder(tier, lane = 0, trackX = CONVEYOR_RIGHT_X) {
     const tierIndex = ["Bonus Easy", "Bonus Medium", "Bonus Hard"].indexOf(tier);
-    const template = Phaser.Utils.Array.GetRandom(MATH_CONFIG.freeOrderPools[tierIndex]);
+    const pools = MATH_CONFIG.bonusConveyorOrderPools || MATH_CONFIG.freeOrderPools;
+    const template = Phaser.Utils.Array.GetRandom(pools[tierIndex]);
     const spec = { ...template };
     const payoutBands = Array.isArray(spec.payoutBands) && spec.payoutBands.length
       ? spec.payoutBands
-      : MATH_CONFIG.freeOrderPayoutTickets?.[tierIndex];
+      : (MATH_CONFIG.bonusConveyorPayoutTickets || MATH_CONFIG.freeOrderPayoutTickets)?.[tierIndex];
     delete spec.payoutBands;
-    if (spec.kind === "color") spec.type = TYPES[spec.typeIndex];
+    if (spec.needMin !== undefined) {
+      spec.need = Phaser.Math.Between(Number(spec.needMin), Number(spec.needMax ?? spec.needMin));
+      delete spec.needMin;
+      delete spec.needMax;
+    }
+    if (spec.kind === "color") spec.type = spec.typeIndex === undefined ? Phaser.Utils.Array.GetRandom(TYPES) : TYPES[spec.typeIndex];
     delete spec.typeIndex;
-    const order = { tier, scope: "free", ...spec };
+    const order = {
+      tier,
+      scope: "free",
+      lane,
+      trackX,
+      conveyorId: `bonus-conveyor-${++this.conveyorOrderSequence}`,
+      rewardType: "coins",
+      ...spec
+    };
     const payoutTicket = this.pickWeightedBand(payoutBands);
     order.payoutTicket = payoutTicket ? { ...payoutTicket } : null;
-    order.start = this.rawOrderProgress(order);
     order.gold = false;
     order.discounted = false;
+    order.cardWidth = this.conveyorOrderWidth(order);
+    order.start = this.rawOrderProgress(order);
     return order;
   }
 
@@ -3176,7 +3289,10 @@ class CandyOrdersScene extends Phaser.Scene {
     const isFree = this.gameMode === "free";
     this.configureBoard(isFree ? FREE_ROWS : MAIN_ROWS);
     this.createBoardFrame();
-    if (!Array.isArray(this.orders) || this.orders.length !== 3) {
+    const ordersValid = Array.isArray(this.orders)
+      && this.orders.length > 0
+      && this.orders.every((order) => isFree ? order.scope === "free" : order.scope !== "free");
+    if (!ordersValid) {
       if (isFree) this.generateFreeOrders();
       else this.generateOrders();
     }
@@ -4155,13 +4271,18 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   async playBonusChefShow(orderIndex, fromNeed, toNeed) {
-    const rowY = this.orderRowY(orderIndex);
+    const order = this.orders[orderIndex];
+    const view = order?.conveyorId ? this.conveyorOrderViews.get(order.conveyorId) : null;
     const row = this.orderRows[orderIndex];
-    const focus = this.add.rectangle(W / 2, rowY, W - 42, 42, 0xff8fc7, 0.24).setStrokeStyle(4, 0xffffff, 0.9).setDepth(37).setAlpha(0);
+    const rowY = view?.container.y ?? this.orderRowY(orderIndex);
+    const focusX = view?.container.x ?? W / 2;
+    const focusWidth = view ? Number(order.cardWidth || 72) + 12 : W - 42;
+    const progressTarget = view?.progress ?? row?.progress;
+    const focus = this.add.rectangle(focusX, rowY, focusWidth, 44, 0xff8fc7, 0.24).setStrokeStyle(4, 0xffffff, 0.9).setDepth(74).setAlpha(0);
     focus.isFxSprite = true;
     this.fxSprites.add(focus);
     const counter = { value: fromNeed };
-    const number = this.add.text(206, rowY, `${fromNeed}`, {
+    const number = this.add.text(focusX, rowY, `${fromNeed}`, {
       fontFamily: "Arial Black",
       fontSize: "27px",
       color: "#ffffff",
@@ -4170,7 +4291,7 @@ class CandyOrdersScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(76);
     number.isFxSprite = true;
     this.fxSprites.add(number);
-    this.tweens.add({ targets: [focus, row.progress], alpha: 1, scale: 1.18, duration: 190, yoyo: true, repeat: 1, ease: "Back.Out" });
+    this.tweens.add({ targets: [focus, progressTarget].filter(Boolean), alpha: 1, scale: 1.18, duration: 190, yoyo: true, repeat: 1, ease: "Back.Out" });
     this.tweens.add({ targets: number, scale: 1.35, duration: 180, yoyo: true, repeat: 1, ease: "Back.Out" });
     this.playPopSound(740);
     await this.wait(360);
@@ -4181,10 +4302,10 @@ class CandyOrdersScene extends Phaser.Scene {
       ease: "Cubic.Out",
       onUpdate: () => number.setText(`${Math.round(counter.value)}`)
     });
-    this.tweens.add({ targets: [number, row.progress], scale: 1.24, duration: 110, yoyo: true, repeat: 5, ease: "Sine.InOut" });
+    this.tweens.add({ targets: [number, progressTarget].filter(Boolean), scale: 1.24, duration: 110, yoyo: true, repeat: 5, ease: "Sine.InOut" });
     this.time.delayedCall(180, () => this.playPopSound(980));
     this.time.delayedCall(420, () => this.playPopSound(1280));
-    this.time.delayedCall(710, () => this.burstAt(206, rowY, 0xff8fc7));
+    this.time.delayedCall(710, () => this.burstAt(focusX, rowY, 0xff8fc7));
     await this.wait(860);
     this.tweens.add({ targets: [focus, number], alpha: 0, duration: 260, ease: "Cubic.In", onComplete: () => {
       this.destroyFx(focus);
@@ -4193,19 +4314,24 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   async playBonusGoldShow(orderIndex, fromRange, toRange) {
-    const rowY = this.orderRowY(orderIndex);
+    const order = this.orders[orderIndex];
+    const view = order?.conveyorId ? this.conveyorOrderViews.get(order.conveyorId) : null;
     const row = this.orderRows[orderIndex];
-    const wash = this.add.rectangle(W / 2, rowY, W - 28, 45, 0xfff06a, 0.44).setStrokeStyle(4, 0xffffff, 0.85).setDepth(36);
+    const rowY = view?.container.y ?? this.orderRowY(orderIndex);
+    const focusX = view?.container.x ?? W / 2;
+    const focusWidth = view ? Number(order.cardWidth || 72) + 14 : W - 28;
+    const rewardTarget = view?.progress ?? row?.reward;
+    const wash = this.add.rectangle(focusX, rowY, focusWidth, 45, 0xfff06a, 0.44).setStrokeStyle(4, 0xffffff, 0.85).setDepth(74);
     wash.isFxSprite = true;
     this.fxSprites.add(wash);
     for (let i = 0; i < 8; i++) {
-      const ray = this.addFxRect(W / 2, rowY, W - 50, 5, i % 2 ? 0xffffff : 0xfff06a, 0.8).setDepth(37);
+      const ray = this.addFxRect(focusX, rowY, focusWidth, 5, i % 2 ? 0xffffff : 0xfff06a, 0.8).setDepth(75);
       ray.setAngle(-18 + i * 5);
       this.tweens.add({ targets: ray, scaleX: 1.12, alpha: 0, delay: i * 38, duration: 520, ease: "Cubic.Out", onComplete: () => this.destroyFx(ray) });
     }
     const beforeText = `${fromRange.min}-${fromRange.max}x`;
     const afterText = `${toRange.min}-${toRange.max}x`;
-    const mult = this.add.text(W - 54, rowY, beforeText, {
+    const mult = this.add.text(focusX, rowY, beforeText, {
       fontFamily: "Arial Black",
       fontSize: "18px",
       color: "#fff6d0",
@@ -4214,13 +4340,13 @@ class CandyOrdersScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(39);
     mult.isFxSprite = true;
     this.fxSprites.add(mult);
-    this.tweens.add({ targets: [mult, row.reward], scale: 1.34, duration: 260, yoyo: true, repeat: 1, ease: "Back.Out" });
+    this.tweens.add({ targets: [mult, rewardTarget].filter(Boolean), scale: 1.34, duration: 260, yoyo: true, repeat: 1, ease: "Back.Out" });
     this.time.delayedCall(720, () => {
       mult.setText(afterText).setColor("#ffffff");
-      this.burstAt(W - 54, rowY, 0xfff06a);
+      this.burstAt(focusX, rowY, 0xfff06a);
       this.playUnlockSound();
     });
-    this.tweens.add({ targets: [mult, row.reward], scale: 1.18, delay: 720, duration: 180, yoyo: true, repeat: 4, ease: "Sine.InOut" });
+    this.tweens.add({ targets: [mult, rewardTarget].filter(Boolean), scale: 1.18, delay: 720, duration: 180, yoyo: true, repeat: 4, ease: "Sine.InOut" });
     this.tweens.add({ targets: wash, scaleX: 1.05, alpha: 0, delay: 1020, duration: 560, ease: "Cubic.In", onComplete: () => this.destroyFx(wash) });
     this.tweens.add({ targets: mult, alpha: 0, y: rowY - 30, delay: 1460, duration: 420, ease: "Cubic.In", onComplete: () => this.destroyFx(mult) });
     this.cameras.main.flash(260, 255, 240, 106);
@@ -4333,8 +4459,10 @@ class CandyOrdersScene extends Phaser.Scene {
     picked.order.discounted = true;
     this.showBonusEventBanner("CHEF'S HELP", 0xff8fc7);
     await this.playBonusChefShow(picked.index, fromNeed, toNeed);
+    const view = this.conveyorOrderViews.get(picked.order.conveyorId);
     const row = this.orderRows[picked.index];
-    this.tweens.add({ targets: [row.panel, row.reward], scale: 1.12, duration: 140, yoyo: true, repeat: 1, ease: "Back.Out" });
+    const targets = view ? [view.plate, view.progress] : [row?.panel, row?.reward].filter(Boolean);
+    if (targets.length) this.tweens.add({ targets, scale: 1.12, duration: 140, yoyo: true, repeat: 1, ease: "Back.Out" });
     this.updateOrders();
     await this.wait(620);
     return true;
@@ -4355,8 +4483,10 @@ class CandyOrdersScene extends Phaser.Scene {
     };
     this.showBonusEventBanner(`GOLDEN RUSH x${picked.order.goldMult}`, 0xfff06a);
     await this.playBonusGoldShow(picked.index, fromRange, toRange);
+    const view = this.conveyorOrderViews.get(picked.order.conveyorId);
     const row = this.orderRows[picked.index];
-    this.tweens.add({ targets: [row.glow, row.frameArt, row.reward], scale: 1.14, duration: 150, yoyo: true, repeat: 2, ease: "Back.Out" });
+    const targets = view ? [view.plate, view.progress, view.icon] : [row?.glow, row?.frameArt, row?.reward].filter(Boolean);
+    if (targets.length) this.tweens.add({ targets, scale: 1.14, duration: 150, yoyo: true, repeat: 2, ease: "Back.Out" });
     this.updateOrders();
     await this.wait(720);
     return true;
@@ -4407,7 +4537,7 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   updateOrders() {
-    if (this.gameMode === "main") {
+    if (this.gameMode === "main" || (this.gameMode === "free" && this.orders.some((order) => order.conveyorId))) {
       this.updateConveyorOrders();
       return;
     }
@@ -4528,15 +4658,33 @@ class CandyOrdersScene extends Phaser.Scene {
 
   createConveyorUi() {
     this.conveyorUiItems = [];
-    const frame = this.add.image(W / 2, 98, "ui-conveyor-panel-v2")
+    this.conveyorDangerItems = [];
+    this.conveyorFrame = this.add.image(W / 2, 98, "ui-conveyor-panel-v2")
       .setDisplaySize(W - 10, 176)
       .setDepth(9);
-    this.conveyorUiItems.push(frame);
+    this.conveyorUiItems.push(this.conveyorFrame);
     CONVEYOR_LANE_Y.forEach((y, lane) => {
       const danger = this.add.rectangle(CONVEYOR_LEFT_X + 15, y, 21, 36, 0xff3f63, 0.12)
         .setStrokeStyle(1, 0xffe277, 0.4)
         .setDepth(15);
+      this.conveyorDangerItems.push(danger);
       this.conveyorUiItems.push(danger);
+    });
+  }
+
+  conveyorLaneY(lane, order = null) {
+    const isBonus = order?.scope === "free" || (!order && this.gameMode === "free");
+    return (isBonus ? BONUS_CONVEYOR_LANE_Y : CONVEYOR_LANE_Y)[lane] ?? CONVEYOR_LANE_Y[0];
+  }
+
+  layoutConveyorUi(isBonus = this.gameMode === "free") {
+    if (!this.conveyorFrame) return;
+    this.conveyorFrame
+      .setPosition(W / 2, isBonus ? 166 : 98)
+      .setDisplaySize(W - 10, isBonus ? 145 : 176);
+    this.conveyorDangerItems.forEach((danger, lane) => {
+      danger.setPosition(CONVEYOR_LEFT_X + 15, isBonus ? BONUS_CONVEYOR_LANE_Y[lane] : CONVEYOR_LANE_Y[lane]);
+      danger.setVisible(!isBonus && (this.currentUiMode === "game"));
     });
   }
 
@@ -4556,12 +4704,14 @@ class CandyOrdersScene extends Phaser.Scene {
 
   createConveyorOrderView(order) {
     const tierColors = { Easy: 0x49d6a6, Medium: 0x5bd9ff, Hard: 0xffd94c };
-    const fill = order.golden ? 0x8a5e0b : 0x65162a;
-    const stroke = order.golden ? 0xfff06a : (tierColors[order.tier] || 0xffb1d2);
+    const tierKey = String(order.tier || "Easy").replace(/^Bonus\s+/i, "");
+    const isGold = !!(order.golden || order.gold);
+    const fill = isGold ? 0x8a5e0b : (order.scope === "free" ? 0x42195f : 0x65162a);
+    const stroke = isGold ? 0xfff06a : (tierColors[tierKey] || 0xffb1d2);
     const cardWidth = Number(order.cardWidth || this.conveyorOrderWidth(order));
     order.cardWidth = cardWidth;
     const halfWidth = cardWidth / 2;
-    const container = this.add.container(order.trackX, CONVEYOR_LANE_Y[order.lane]).setDepth(24);
+    const container = this.add.container(order.trackX, this.conveyorLaneY(order.lane, order)).setDepth(24);
     const shadow = this.add.rectangle(1, 2, cardWidth, 40, 0x21060d, 0.8);
     const plate = this.add.rectangle(0, 0, cardWidth, 40, fill, 0.98).setStrokeStyle(2, stroke, 1);
     const iconSize = cardWidth >= 84 ? 40 : cardWidth >= 72 ? 38 : 36;
@@ -4620,6 +4770,7 @@ class CandyOrdersScene extends Phaser.Scene {
 
   setConveyorVisible(visible) {
     this.conveyorUiItems.forEach((item) => item.setVisible(visible));
+    if (this.gameMode === "free") this.conveyorDangerItems.forEach((item) => item.setVisible(false));
     this.conveyorOrderViews.forEach((view) => view.container.setVisible(visible));
   }
 
@@ -4635,9 +4786,11 @@ class CandyOrdersScene extends Phaser.Scene {
       const ratio = Phaser.Math.Clamp(progress / Math.max(1, order.need), 0, 1);
       view.progress.setText(`${progress}/${order.need}`);
       view.bar.setScale(Math.max(0.001, ratio), 1);
-      const danger = order.trackX - Number(order.cardWidth || 62) / 2 < CONVEYOR_LEFT_X + 52;
-      view.plate.setFillStyle(order.golden ? 0x8a5e0b : danger ? 0x8b1628 : 0x65162a, 0.98);
-      view.plate.setStrokeStyle(danger ? 3 : 2, danger ? 0xffe277 : view.strokeColor, 1);
+      const protectedBonus = order.scope === "free";
+      const isGold = !!(order.golden || order.gold);
+      const danger = !protectedBonus && order.trackX - Number(order.cardWidth || 62) / 2 < CONVEYOR_LEFT_X + 52;
+      view.plate.setFillStyle(isGold ? 0x8a5e0b : danger ? 0x8b1628 : protectedBonus ? 0x42195f : 0x65162a, 0.98);
+      view.plate.setStrokeStyle(danger ? 3 : 2, danger ? 0xffe277 : isGold ? 0xfff06a : view.strokeColor, 1);
       if (danger && !view.dangerTween) {
         view.dangerTween = this.tweens.add({
           targets: [view.plate, view.icon, view.progress],
@@ -4652,7 +4805,7 @@ class CandyOrdersScene extends Phaser.Scene {
         view.dangerTween = null;
         [view.plate, view.icon, view.progress].forEach((item) => item.setAlpha(1));
       }
-      view.container.setVisible(this.currentUiMode === "game");
+      view.container.setVisible(this.currentUiMode === "game" || this.currentUiMode === "free");
     });
   }
 
@@ -4940,6 +5093,7 @@ class CandyOrdersScene extends Phaser.Scene {
     } else {
       this.updateFreeUi();
     }
+    await this.advanceBonusConveyorOrders();
     if (this.freeMovesLeft <= 0) {
       await this.endFreeGame();
       return;
@@ -5040,7 +5194,7 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   fulfillCompletedOrders() {
-    if (this.gameMode === "main") return this.fulfillConveyorOrders();
+    if (this.orders.some((order) => order.conveyorId)) return this.fulfillConveyorOrders();
     let reward = 0;
     let scatterGranted = false;
     let refreshedOrders = 0;
@@ -5113,6 +5267,9 @@ class CandyOrdersScene extends Phaser.Scene {
       .map((order, index) => ({ order, index }))
       .filter(({ order }) => this.orderProgress(order) >= order.need);
     if (!completedEntries.length) return 0;
+    const isFree = this.gameMode === "free";
+    const chainMult = this.orderChainMultiplier(completedEntries.length, isFree);
+    const bonusCap = Number(MATH_CONFIG.maxBonusWinMult || Infinity) * this.betAmount;
     let reward = 0;
     let scatterGranted = false;
     const completedIds = new Set();
@@ -5120,18 +5277,34 @@ class CandyOrdersScene extends Phaser.Scene {
       const paysCoins = this.orderPaysCoins(order);
       const paysScatter = this.orderPaysScatter(order);
       const roll = paysCoins ? this.rollOrderMult(order) : { range: null, mult: 0 };
-      const finalMult = paysCoins ? Math.max(1, roll.mult) : 0;
-      const orderReward = paysCoins ? finalMult * this.betAmount : 0;
+      const goldMult = isFree && order.gold ? Number(order.goldMult || 1.5) : 1;
+      const requestedMult = paysCoins ? this.roundMultiplier(roll.mult * goldMult * chainMult) : 0;
+      let orderReward = paysCoins ? Math.round(requestedMult * this.betAmount) : 0;
+      if (isFree) orderReward = Math.min(orderReward, Math.max(0, bonusCap - this.freeReward));
+      const finalMult = paysCoins ? this.roundMultiplier(orderReward / Math.max(1, this.betAmount)) : 0;
+      const adjustedRange = roll.range ? {
+        min: this.roundMultiplier(roll.range.min * goldMult * chainMult),
+        median: this.roundMultiplier(roll.range.median * goldMult * chainMult),
+        max: this.roundMultiplier(roll.range.max * goldMult * chainMult)
+      } : null;
       reward += orderReward;
-      this.ordersCompleted += 1;
+      if (isFree) {
+        this.freeOrdersCompleted += 1;
+        this.freeReward += orderReward;
+      } else {
+        this.ordersCompleted += 1;
+      }
       if (paysScatter && this.grantScatterRewardFx(index)) scatterGranted = true;
       this.moveCompletions.push({
         order,
         reward: orderReward,
         rollMult: finalMult,
-        range: roll.range,
+        baseRollMult: roll.mult,
+        requestedMult,
+        range: adjustedRange,
         scatter: paysScatter,
-        goldMult: 1,
+        goldMult,
+        chainMult,
         boostMult: 1,
         boostLabel: ""
       });
@@ -5145,9 +5318,12 @@ class CandyOrdersScene extends Phaser.Scene {
       this.sessionReward += reward;
       this.moveReward += reward;
       this.animateWalletMeter(reward);
-      this.animateWinMeter(reward);
-      this.winText.setText(`ORDER REWARD +${this.moveReward}`);
-      this.statusText.setText(completedEntries.length > 1 ? `${completedEntries.length} orders complete!` : "Order complete!");
+      if (isFree) this.updateFreeUi();
+      else this.animateWinMeter(reward);
+      this.winText.setText(`${isFree ? "BONUS " : ""}ORDER REWARD +${this.moveReward}`);
+      this.statusText.setText(completedEntries.length > 1
+        ? `${completedEntries.length} orders complete. Chain x${chainMult}!`
+        : "Order complete!");
     } else if (scatterGranted) {
       this.statusText.setText("Order complete. Scatter added.");
     }
