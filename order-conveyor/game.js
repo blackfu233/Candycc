@@ -29,9 +29,9 @@ const ORDER_ROW_LAYOUT = [
   { y: 166, iconX: 60, textX: 104, rewardX: W - 58, labelDy: -6, progressDy: 8 },
   { y: 213, iconX: 60, textX: 104, rewardX: W - 58, labelDy: -6, progressDy: 8 }
 ];
-const CONVEYOR_LANE_Y = [48, 96, 144];
-const CONVEYOR_LEFT_X = 39;
-const CONVEYOR_RIGHT_X = W - 31;
+const CONVEYOR_LANE_Y = [56, 98, 140];
+const CONVEYOR_LEFT_X = 47;
+const CONVEYOR_RIGHT_X = W - 52;
 const LABELS = {
   red: "Red",
   blue: "Blue",
@@ -1413,7 +1413,7 @@ class CandyOrdersScene extends Phaser.Scene {
     }
     this.createConveyorUi();
 
-    this.statusText = this.add.text(150, 181, "Choose bet, then start", {
+    this.statusText = this.add.text(170, 181, "Choose bet, then start", {
       fontSize: 13,
       fontStyle: "800",
       color: "#ffffff",
@@ -1421,10 +1421,10 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(41);
 
-    this.keyHudPanel = this.add.rectangle(W - 62, 181, 96, 28, 0x5a1020, 0.9).setStrokeStyle(2, 0xffe277, 0.85);
-    this.keyHudIcon = this.add.image(W - 96, 181, "sym-scatter");
-    this.keyHudIcon.setScale(27 / Math.max(this.keyHudIcon.width, this.keyHudIcon.height));
-    this.keyHudText = this.add.text(W - 58, 181, "0/3", {
+    this.keyHudPanel = this.add.rectangle(W - 55, 181, 94, 28, 0x5a1020, 0.9).setStrokeStyle(2, 0xffe277, 0.85);
+    this.keyHudIcon = this.add.image(W - 91, 181, "sym-scatter");
+    this.keyHudIcon.setScale(29 / Math.max(this.keyHudIcon.width, this.keyHudIcon.height));
+    this.keyHudText = this.add.text(W - 41, 181, "0/3", {
       fontSize: 15,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1513,8 +1513,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.statusFrameArt = this.add.image(W / 2, 676, "ui-bottom-hud-v2")
       .setDisplaySize(W - 14, 78)
       .setDepth(7);
-    const leftInfoX = 78;
-    const rightInfoX = W - 78;
+    const leftInfoX = 70;
+    const rightInfoX = W - 70;
     const infoLabelY = 669;
     const infoValueY = 684;
     const centerInfoY = 668;
@@ -1578,15 +1578,15 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#7a2d93",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(11);
-    this.autoButton = this.add.rectangle(W / 2, 690, 108, 22, 0x6f2436, 0.98)
+    this.autoButton = this.add.rectangle(W / 2, 688, 108, 22, 0x6f2436, 0.98)
       .setStrokeStyle(2, 0xffd2df, 0.9)
       .setDepth(12)
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => this.toggleAutoPlay());
-    this.autoStateDot = this.add.circle(W / 2 - 39, 690, 5, 0xff8bab, 1)
+    this.autoStateDot = this.add.circle(W / 2 - 39, 688, 5, 0xff8bab, 1)
       .setStrokeStyle(2, 0xffffff, 0.85)
       .setDepth(13);
-    this.autoButtonText = this.add.text(W / 2 + 7, 690, "AUTO OFF", {
+    this.autoButtonText = this.add.text(W / 2 + 7, 688, "AUTO OFF", {
       fontSize: 11,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1856,7 +1856,7 @@ class CandyOrdersScene extends Phaser.Scene {
     });
     this.setConveyorVisible(mode === "game" && !isFree);
     this.statusText.setVisible(mode === "game");
-    this.statusText.setX(isFree ? W / 2 : 150);
+    this.statusText.setX(isFree ? W / 2 : 170);
     this.winText.setVisible(mode === "game");
     this.statusFrameArt.setVisible(mode === "game");
     this.walletMeterGlow.setVisible(mode === "game");
@@ -2109,7 +2109,7 @@ class CandyOrdersScene extends Phaser.Scene {
     const isFree = this.currentUiMode === "free";
     const visible = (this.currentUiMode === "game" || isFree) && !this.autoUiSuppressed;
     const buttonX = isFree ? 74 : W / 2;
-    const buttonY = isFree ? 66 : 690;
+    const buttonY = isFree ? 66 : 688;
     this.autoButton.setPosition(buttonX, buttonY).setDisplaySize(isFree ? 90 : 108, isFree ? 18 : 24);
     this.autoStateDot.setPosition(buttonX - (isFree ? 32 : 39), buttonY);
     this.autoButtonText.setPosition(buttonX + (isFree ? 6 : 7), buttonY).setFontSize(isFree ? 10 : 11);
@@ -4540,11 +4540,11 @@ class CandyOrdersScene extends Phaser.Scene {
     const fill = order.golden ? 0x8a5e0b : 0x65162a;
     const stroke = order.golden ? 0xfff06a : (tierColors[order.tier] || 0xffb1d2);
     const container = this.add.container(order.trackX, CONVEYOR_LANE_Y[order.lane]).setDepth(24);
-    const shadow = this.add.rectangle(1, 2, 48, 34, 0x21060d, 0.8);
-    const plate = this.add.rectangle(0, 0, 48, 34, fill, 0.98).setStrokeStyle(2, stroke, 1);
-    const icon = this.add.image(-9, -3, this.conveyorIconKey(order));
-    icon.setScale(27 / Math.max(icon.width, icon.height));
-    const progress = this.add.text(11, 6, "0/0", {
+    const shadow = this.add.rectangle(1, 2, 56, 36, 0x21060d, 0.8);
+    const plate = this.add.rectangle(0, 0, 56, 36, fill, 0.98).setStrokeStyle(2, stroke, 1);
+    const icon = this.add.image(-11, -3, this.conveyorIconKey(order));
+    icon.setScale(34 / Math.max(icon.width, icon.height));
+    const progress = this.add.text(14, 6, "0/0", {
       fontSize: 9,
       fontStyle: "900",
       color: "#fff6d0",
@@ -4552,9 +4552,9 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 2,
       align: "center"
     }).setOrigin(0.5);
-    const barBg = this.add.rectangle(-21, 14, 42, 3, 0x220711, 0.95).setOrigin(0, 0.5);
-    const bar = this.add.rectangle(-21, 14, 42, 3, stroke, 1).setOrigin(0, 0.5);
-    const tierDot = this.add.rectangle(19, -12, 5, 5, stroke, 1).setStrokeStyle(1, 0xffffff, 0.85);
+    const barBg = this.add.rectangle(-24, 15, 48, 3, 0x220711, 0.95).setOrigin(0, 0.5);
+    const bar = this.add.rectangle(-24, 15, 48, 3, stroke, 1).setOrigin(0, 0.5);
+    const tierDot = this.add.rectangle(23, -13, 5, 5, stroke, 1).setStrokeStyle(1, 0xffffff, 0.85);
     container.add([shadow, plate, icon, progress, barBg, bar, tierDot]);
     plate.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.showConveyorOrderDetails(order.conveyorId));
     container.setScale(0.72);
