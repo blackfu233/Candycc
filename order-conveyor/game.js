@@ -577,7 +577,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.playOrderCompleteSound();
     this.cameras.main.shake(620, 0.016);
 
-    const flash = this.add.rectangle(x, y, order?.conveyorId ? 54 : W - 12, 42, 0xfff06a, 0.86).setDepth(110);
+    const flashWidth = order?.conveyorId ? Math.max(64, Number(order.cardWidth || 64)) : W - 12;
+    const flash = this.add.rectangle(x, y, flashWidth, 44, 0xfff06a, 0.86).setDepth(110);
     flash.isFxSprite = true;
     this.fxSprites.add(flash);
     this.tweens.add({
@@ -857,13 +858,15 @@ class CandyOrdersScene extends Phaser.Scene {
 
   showConveyorRewardSummary(completions, totalReward) {
     const depth = 120;
-    const visible = completions.slice(0, 9);
+    const visible = completions.slice(0, 6);
+    const single = visible.length === 1;
     const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x16091f, 0.55).setDepth(depth);
-    const panel = this.add.rectangle(W / 2, 430, W - 34, 278, 0x4a1a6b, 0.98)
+    const panel = this.add.rectangle(W / 2, 421, W - 22, single ? 306 : 366, 0x4a1a6b, 0.98)
       .setStrokeStyle(6, 0xfff06a, 1)
       .setDepth(depth + 1);
-    const title = this.add.text(W / 2, 318, `${completions.length} ORDERS COMPLETE!`, {
-      fontSize: completions.length >= 10 ? 26 : 29,
+    const titleText = completions.length === 1 ? "ORDER COMPLETE!" : `${completions.length} ORDERS COMPLETE!`;
+    const title = this.add.text(W / 2, single ? 304 : 278, titleText, {
+      fontSize: completions.length >= 10 ? 28 : 32,
       fontStyle: "900",
       color: "#ffffff",
       stroke: "#b218c9",
@@ -872,32 +875,36 @@ class CandyOrdersScene extends Phaser.Scene {
     const items = [veil, panel, title];
     const resultItems = [];
     visible.forEach((completion, index) => {
-      const col = index % 3;
-      const row = Math.floor(index / 3);
-      const x = 80 + col * 122;
-      const y = 365 + row * 48;
-      const icon = this.add.image(x - 22, y, this.conveyorIconKey(completion.order)).setDepth(depth + 4);
-      icon.setScale(24 / Math.max(icon.width, icon.height));
-      const result = this.add.text(x + 13, y, completion.reward > 0 ? `+${completion.rollMult}x` : "SCATTER", {
-        fontSize: completion.reward > 0 ? 17 : 10,
+      const col = index % 2;
+      const row = Math.floor(index / 2);
+      const x = single ? W / 2 : 121 + col * 208;
+      const y = single ? 382 : 337 + row * 67;
+      const resultPlate = this.add.rectangle(x, y, single ? 238 : 184, single ? 116 : 54, completion.order?.golden ? 0x7b5410 : 0x65162a, 0.96)
+        .setStrokeStyle(3, completion.order?.golden ? 0xfff06a : 0x8ee8ff, 0.95)
+        .setDepth(depth + 2);
+      const icon = this.add.image(x - (single ? 54 : 57), y, this.conveyorIconKey(completion.order)).setDepth(depth + 4);
+      const iconSize = single ? 74 : 38;
+      icon.setScale(iconSize / Math.max(icon.width, icon.height));
+      const result = this.add.text(x + (single ? 36 : 24), y, completion.reward > 0 ? `+${completion.rollMult}x` : "SCATTER", {
+        fontSize: completion.reward > 0 ? (single ? 44 : 23) : (single ? 21 : 13),
         fontStyle: "900",
         color: completion.order?.golden ? "#fff06a" : "#ffffff",
         stroke: "#7a2d93",
-        strokeThickness: 5
+        strokeThickness: single ? 8 : 6
       }).setOrigin(0.5).setDepth(depth + 4);
-      resultItems.push(icon, result);
-      items.push(icon, result);
+      resultItems.push(resultPlate, icon, result);
+      items.push(resultPlate, icon, result);
     });
     const extraCount = Math.max(0, completions.length - visible.length);
-    const extra = this.add.text(W / 2, 511, extraCount ? `+${extraCount} MORE ORDERS` : "", {
-      fontSize: 12,
+    const extra = this.add.text(W / 2, single ? 474 : 537, extraCount ? `+${extraCount} MORE ORDERS` : "", {
+      fontSize: 15,
       fontStyle: "900",
       color: "#8ee8ff",
       stroke: "#351352",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(depth + 4);
-    const total = this.add.text(W / 2, 542, `TOTAL +${totalReward}`, {
-      fontSize: 30,
+    const total = this.add.text(W / 2, single ? 520 : 574, `TOTAL +${totalReward}`, {
+      fontSize: single ? 40 : 36,
       fontStyle: "900",
       color: "#fff06a",
       stroke: "#b218c9",
@@ -914,13 +921,13 @@ class CandyOrdersScene extends Phaser.Scene {
     this.tweens.add({ targets: veil, alpha: 0.55, duration: 180 });
     this.tweens.add({ targets: [panel, title], alpha: 1, scale: 1, duration: 280, ease: "Back.Out" });
     resultItems.forEach((item, index) => {
-      this.time.delayedCall(220 + Math.floor(index / 2) * 130, () => {
+      this.time.delayedCall(220 + Math.floor(index / 3) * 140, () => {
         item.setAlpha(1).setScale(item.scaleX * 1.18, item.scaleY * 1.18);
         this.tweens.add({ targets: item, scaleX: item.scaleX / 1.18, scaleY: item.scaleY / 1.18, duration: 180, ease: "Back.Out" });
         if (index % 2 === 1) this.playPopSound(820 + index * 30);
       });
     });
-    const totalDelay = 520 + visible.length * 90;
+    const totalDelay = 620 + visible.length * 100;
     this.time.delayedCall(totalDelay, () => {
       extra.setAlpha(extraCount ? 1 : 0);
       total.setAlpha(1);
@@ -929,7 +936,7 @@ class CandyOrdersScene extends Phaser.Scene {
       this.cameras.main.shake(220, 0.008);
       this.burstAt(W / 2, total.y, 0xfff06a);
     });
-    const fadeDelay = Math.max(2100, totalDelay + 850);
+    const fadeDelay = Math.max(2500, totalDelay + 1050);
     this.tweens.add({
       targets: items,
       alpha: 0,
@@ -2308,21 +2315,31 @@ class CandyOrdersScene extends Phaser.Scene {
     return order.scope !== "free" && (order.rewardType === "scatter" || order.rewardType === "coinsScatter");
   }
 
+  conveyorOrderWidth(order) {
+    const tierBase = { Easy: 62, Medium: 72, Hard: 82 }[order?.tier] || 66;
+    const kindBonus = { any: 3, cascade: 5, combo: 5, chocolate: 7 }[order?.kind] || 0;
+    const need = Number(order?.need || 0);
+    const needBonus = need >= 150 ? 7 : need >= 90 ? 5 : need >= 48 ? 4 : need >= 28 ? 2 : 0;
+    return Phaser.Math.Clamp(tierBase + kindBonus + needBonus, 62, 94);
+  }
+
   generateOrders() {
     this.clearConveyorViews();
     this.orders = [];
     this.conveyorOrderSequence = 0;
     this.conveyorSpawnLane = 0;
-    const laneGap = 60;
-    const outerStart = W - 55;
-    const initialPositions = [
-      Array.from({ length: 5 }, (_, index) => outerStart - index * laneGap),
-      Array.from({ length: 5 }, (_, index) => CONVEYOR_RIGHT_X - index * laneGap),
-      Array.from({ length: 5 }, (_, index) => outerStart - index * laneGap)
-    ];
-    initialPositions.forEach((positions, lane) => {
-      positions.forEach((x) => this.spawnConveyorOrder(lane, x, true));
-    });
+    const cardGap = 6;
+    for (let lane = 0; lane < 3; lane++) {
+      let rightEdge = W - 21;
+      for (let index = 0; index < 5; index++) {
+        const order = this.createConveyorOrder(lane, 0);
+        const leftEdge = rightEdge - order.cardWidth;
+        if (index >= 4 && leftEdge < CONVEYOR_LEFT_X - 8) break;
+        order.trackX = rightEdge - order.cardWidth / 2;
+        this.orders.push(order);
+        rightEdge = leftEdge - cardGap;
+      }
+    }
   }
 
   createConveyorOrder(lane, trackX = CONVEYOR_RIGHT_X) {
@@ -2344,6 +2361,7 @@ class CandyOrdersScene extends Phaser.Scene {
     };
     if (order.kind === "color") order.type = Phaser.Utils.Array.GetRandom(TYPES);
     if (order.golden) order.mult = Math.max(order.mult + 1, Math.round(order.mult * 1.8));
+    order.cardWidth = this.conveyorOrderWidth(order);
     order.start = this.rawOrderProgress(order);
     return order;
   }
@@ -2351,16 +2369,17 @@ class CandyOrdersScene extends Phaser.Scene {
   spawnConveyorOrder(preferredLane = null, trackX = CONVEYOR_RIGHT_X, force = false) {
     const maxActive = Number(MATH_CONFIG.conveyorMaxActiveOrders || 21);
     if (!force && this.orders.length >= maxActive) return null;
-    const minimumGap = Number(MATH_CONFIG.conveyorMinimumGap || 41);
     const laneOrder = preferredLane === null
       ? [0, 1, 2].map((offset) => (this.conveyorSpawnLane + offset) % 3)
       : [preferredLane];
+    const cardGap = 6;
+    const candidateLeft = trackX - 47;
     let lane = null;
     for (const candidate of laneOrder) {
-      const rightmost = this.orders
+      const rightmostEdge = this.orders
         .filter((order) => order.lane === candidate)
-        .reduce((max, order) => Math.max(max, order.trackX), -Infinity);
-      if (force || !Number.isFinite(rightmost) || trackX - rightmost >= minimumGap) {
+        .reduce((max, laneOrder) => Math.max(max, laneOrder.trackX + Number(laneOrder.cardWidth || 62) / 2), -Infinity);
+      if (force || !Number.isFinite(rightmostEdge) || candidateLeft - rightmostEdge >= cardGap) {
         lane = candidate;
         break;
       }
@@ -2381,7 +2400,7 @@ class CandyOrdersScene extends Phaser.Scene {
       const view = this.conveyorOrderViews.get(order.conveyorId);
       if (view) this.tweens.add({ targets: view.container, x: order.trackX, duration: 230, ease: "Cubic.InOut" });
     });
-    const expired = this.orders.filter((order) => order.trackX < CONVEYOR_LEFT_X);
+    const expired = this.orders.filter((order) => order.trackX + Number(order.cardWidth || 62) / 2 < CONVEYOR_LEFT_X);
     if (expired.length) {
       expired.forEach((order) => {
         this.showConveyorExpiredFx(order);
@@ -2456,52 +2475,52 @@ class CandyOrdersScene extends Phaser.Scene {
     this.popup = this.add.group();
     const depth = 132;
     const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x170811, 0.64).setDepth(depth).setInteractive();
-    const panel = this.add.rectangle(W / 2, 356, 292, 226, order.golden ? 0x7b5410 : 0x5e1422, 0.99)
+    const panel = this.add.rectangle(W / 2, 356, W - 42, 278, order.golden ? 0x7b5410 : 0x5e1422, 0.99)
       .setStrokeStyle(5, order.golden ? 0xfff06a : 0x8ee8ff, 1)
       .setDepth(depth + 1);
-    const title = this.add.text(W / 2, 278, order.golden ? "GOLD ORDER" : `${order.tier.toUpperCase()} ORDER`, {
-      fontSize: 24,
+    const title = this.add.text(W / 2, 247, order.golden ? "GOLD ORDER" : `${order.tier.toUpperCase()} ORDER`, {
+      fontSize: 30,
       fontStyle: "900",
       color: order.golden ? "#fff06a" : "#ffffff",
       stroke: "#351352",
-      strokeThickness: 6
+      strokeThickness: 7
     }).setOrigin(0.5).setDepth(depth + 2);
-    const target = this.add.text(W / 2, 306, this.conveyorTargetLabel(order), {
-      fontSize: 14,
+    const target = this.add.text(W / 2, 286, this.conveyorTargetLabel(order), {
+      fontSize: 19,
       fontStyle: "900",
       color: "#8ee8ff",
       stroke: "#351352",
-      strokeThickness: 4
+      strokeThickness: 5
     }).setOrigin(0.5).setDepth(depth + 2);
-    const icon = this.add.image(W / 2 - 70, 347, this.conveyorIconKey(order)).setDepth(depth + 2);
-    icon.setScale(58 / Math.max(icon.width, icon.height));
+    const icon = this.add.image(W / 2 - 89, 358, this.conveyorIconKey(order)).setDepth(depth + 2);
+    icon.setScale(78 / Math.max(icon.width, icon.height));
     const progress = Math.min(this.orderProgress(order), order.need);
-    const goal = this.add.text(W / 2 + 27, 333, `${progress} / ${order.need}`, {
-      fontSize: 23,
+    const goal = this.add.text(W / 2 + 45, 337, `${progress} / ${order.need}`, {
+      fontSize: 29,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#351352",
-      strokeThickness: 5
+      strokeThickness: 6
     }).setOrigin(0.5).setDepth(depth + 2);
     const range = this.orderMultRange(order);
     const rewardLabel = order.rewardType === "coinsScatter"
       ? `${range.min}-${range.max}x + SCATTER`
       : `${range.min}-${range.max}x`;
-    const reward = this.add.text(W / 2 + 27, 374, rewardLabel, {
-      fontSize: order.rewardType === "coinsScatter" ? 15 : 22,
+    const reward = this.add.text(W / 2 + 45, 389, rewardLabel, {
+      fontSize: order.rewardType === "coinsScatter" ? 19 : 28,
       fontStyle: "900",
       color: "#fff06a",
       stroke: "#7a2d93",
-      strokeThickness: 5
+      strokeThickness: 6
     }).setOrigin(0.5).setDepth(depth + 2);
     const timeRatio = Phaser.Math.Clamp((order.trackX - CONVEYOR_LEFT_X) / (CONVEYOR_RIGHT_X - CONVEYOR_LEFT_X), 0, 1);
-    const timeBg = this.add.rectangle(W / 2 - 104, 420, 208, 8, 0x220711, 0.95).setOrigin(0, 0.5).setDepth(depth + 2);
-    const timeBar = this.add.rectangle(W / 2 - 104, 420, 208, 8, timeRatio < 0.22 ? 0xff5372 : 0x49d6a6, 1)
+    const timeBg = this.add.rectangle(W / 2 - 157, 447, 314, 11, 0x220711, 0.95).setOrigin(0, 0.5).setDepth(depth + 2);
+    const timeBar = this.add.rectangle(W / 2 - 157, 447, 314, 11, timeRatio < 0.22 ? 0xff5372 : 0x49d6a6, 1)
       .setOrigin(0, 0.5)
       .setScale(Math.max(0.001, timeRatio), 1)
       .setDepth(depth + 3);
-    const close = this.add.text(W / 2, 449, "X", {
-      fontSize: 20,
+    const close = this.add.text(W / 2, 479, "CLOSE", {
+      fontSize: 18,
       fontStyle: "900",
       color: "#ffffff",
       stroke: "#351352",
@@ -4539,22 +4558,27 @@ class CandyOrdersScene extends Phaser.Scene {
     const tierColors = { Easy: 0x49d6a6, Medium: 0x5bd9ff, Hard: 0xffd94c };
     const fill = order.golden ? 0x8a5e0b : 0x65162a;
     const stroke = order.golden ? 0xfff06a : (tierColors[order.tier] || 0xffb1d2);
+    const cardWidth = Number(order.cardWidth || this.conveyorOrderWidth(order));
+    order.cardWidth = cardWidth;
+    const halfWidth = cardWidth / 2;
     const container = this.add.container(order.trackX, CONVEYOR_LANE_Y[order.lane]).setDepth(24);
-    const shadow = this.add.rectangle(1, 2, 56, 36, 0x21060d, 0.8);
-    const plate = this.add.rectangle(0, 0, 56, 36, fill, 0.98).setStrokeStyle(2, stroke, 1);
-    const icon = this.add.image(-11, -3, this.conveyorIconKey(order));
-    icon.setScale(34 / Math.max(icon.width, icon.height));
-    const progress = this.add.text(14, 6, "0/0", {
-      fontSize: 9,
+    const shadow = this.add.rectangle(1, 2, cardWidth, 40, 0x21060d, 0.8);
+    const plate = this.add.rectangle(0, 0, cardWidth, 40, fill, 0.98).setStrokeStyle(2, stroke, 1);
+    const iconSize = cardWidth >= 84 ? 40 : cardWidth >= 72 ? 38 : 36;
+    const icon = this.add.image(-halfWidth + iconSize / 2 + 3, -3, this.conveyorIconKey(order));
+    icon.setScale(iconSize / Math.max(icon.width, icon.height));
+    const progress = this.add.text(halfWidth - 17, 6, "0/0", {
+      fontSize: cardWidth >= 76 ? 11 : 10,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#351352",
       strokeThickness: 2,
       align: "center"
     }).setOrigin(0.5);
-    const barBg = this.add.rectangle(-24, 15, 48, 3, 0x220711, 0.95).setOrigin(0, 0.5);
-    const bar = this.add.rectangle(-24, 15, 48, 3, stroke, 1).setOrigin(0, 0.5);
-    const tierDot = this.add.rectangle(23, -13, 5, 5, stroke, 1).setStrokeStyle(1, 0xffffff, 0.85);
+    const barWidth = cardWidth - 8;
+    const barBg = this.add.rectangle(-halfWidth + 4, 17, barWidth, 3, 0x220711, 0.95).setOrigin(0, 0.5);
+    const bar = this.add.rectangle(-halfWidth + 4, 17, barWidth, 3, stroke, 1).setOrigin(0, 0.5);
+    const tierDot = this.add.rectangle(halfWidth - 5, -15, 6, 6, stroke, 1).setStrokeStyle(1, 0xffffff, 0.85);
     container.add([shadow, plate, icon, progress, barBg, bar, tierDot]);
     plate.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.showConveyorOrderDetails(order.conveyorId));
     container.setScale(0.72);
@@ -4610,7 +4634,7 @@ class CandyOrdersScene extends Phaser.Scene {
       const ratio = Phaser.Math.Clamp(progress / Math.max(1, order.need), 0, 1);
       view.progress.setText(`${progress}/${order.need}`);
       view.bar.setScale(Math.max(0.001, ratio), 1);
-      const danger = order.trackX < 102;
+      const danger = order.trackX - Number(order.cardWidth || 62) / 2 < CONVEYOR_LEFT_X + 52;
       view.plate.setFillStyle(order.golden ? 0x8a5e0b : danger ? 0x8b1628 : 0x65162a, 0.98);
       view.plate.setStrokeStyle(danger ? 3 : 2, danger ? 0xffe277 : view.strokeColor, 1);
       if (danger && !view.dangerTween) {
