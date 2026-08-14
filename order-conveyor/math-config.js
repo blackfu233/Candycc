@@ -52,8 +52,8 @@
       special: 0.17,
       order: 0.13
     },
-    conveyorShiftPerBet: 16,
-    conveyorMinimumGap: 46,
+    conveyorShiftPerBet: 18,
+    conveyorMinimumGap: 52,
     conveyorMaxActiveOrders: 21,
     conveyorRushChance: 0.08,
     conveyorGoldenChance: 0.045,

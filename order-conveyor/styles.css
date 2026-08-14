@@ -22,8 +22,8 @@ body {
 }
 
 #game {
-  width: min(100vw, 56.25vh);
-  height: min(100vh, 177.78vw);
+  width: min(100vw, 62.5vh);
+  height: min(100vh, 160vw);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
   cursor: none;
 }
