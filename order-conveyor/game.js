@@ -2400,7 +2400,7 @@ class CandyOrdersScene extends Phaser.Scene {
       const view = this.conveyorOrderViews.get(order.conveyorId);
       if (view) this.tweens.add({ targets: view.container, x: order.trackX, duration: 230, ease: "Cubic.InOut" });
     });
-    const expired = this.orders.filter((order) => order.trackX + Number(order.cardWidth || 62) / 2 < CONVEYOR_LEFT_X);
+    const expired = this.orders.filter((order) => order.trackX - Number(order.cardWidth || 62) / 2 <= CONVEYOR_LEFT_X);
     if (expired.length) {
       expired.forEach((order) => {
         this.showConveyorExpiredFx(order);
@@ -4603,10 +4603,11 @@ class CandyOrdersScene extends Phaser.Scene {
     }
     this.tweens.add({
       targets: view.container,
-      x: CONVEYOR_LEFT_X - 34,
       alpha: 0,
-      angle: -12,
-      duration: 260,
+      scaleX: 0.76,
+      scaleY: 0.76,
+      angle: -5,
+      duration: 190,
       ease: "Cubic.In",
       onComplete: destroy
     });
