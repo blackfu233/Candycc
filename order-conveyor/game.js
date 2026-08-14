@@ -29,7 +29,7 @@ const ORDER_ROW_LAYOUT = [
   { y: 171, iconX: 76, textX: 118, rewardX: 312, labelDy: -5, progressDy: 8 },
   { y: 206, iconX: 76, textX: 118, rewardX: 312, labelDy: -5, progressDy: 8 }
 ];
-const CONVEYOR_LANE_Y = ORDER_ROW_LAYOUT.map((row) => row.y);
+const CONVEYOR_LANE_Y = [62, 108, 154];
 const CONVEYOR_LEFT_X = 39;
 const CONVEYOR_RIGHT_X = 374;
 const LABELS = {
@@ -148,9 +148,9 @@ class CandyOrdersScene extends Phaser.Scene {
 
   configureBoard(rows) {
     this.rows = rows;
-    this.cell = rows === FREE_ROWS ? 43 : 49;
+    this.cell = rows === FREE_ROWS ? 43 : 52;
     this.boardX = Math.round((W - this.cell * COLS) / 2);
-    this.boardY = rows === FREE_ROWS ? 292 : 286;
+    this.boardY = rows === FREE_ROWS ? 292 : 232;
   }
 
   createBackground() {
@@ -263,27 +263,44 @@ class CandyOrdersScene extends Phaser.Scene {
       ctx.fillRect(x, y, w, h);
     };
     if (kind === "cascade") {
-      r(6, 10, 14, 14, "#8ee8ff");
-      r(20, 22, 14, 14, "#fff06a");
-      r(34, 34, 14, 14, "#ff8fc7");
-      r(46, 48, 10, 10, "#ffffff");
-      r(9, 13, 8, 8, "#ffffff");
-      r(23, 25, 8, 8, "#351352");
-      r(37, 37, 8, 8, "#ffffff");
+      ctx.fillStyle = "#351352";
+      ctx.beginPath();
+      ctx.moveTo(33, 3);
+      ctx.lineTo(12, 36);
+      ctx.lineTo(27, 36);
+      ctx.lineTo(20, 61);
+      ctx.lineTo(53, 27);
+      ctx.lineTo(38, 27);
+      ctx.lineTo(50, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#fff06a";
+      ctx.beginPath();
+      ctx.moveTo(35, 9);
+      ctx.lineTo(20, 32);
+      ctx.lineTo(34, 32);
+      ctx.lineTo(29, 50);
+      ctx.lineTo(45, 32);
+      ctx.lineTo(32, 32);
+      ctx.lineTo(42, 9);
+      ctx.closePath();
+      ctx.fill();
+      r(9, 12, 7, 7, "#8ee8ff");
+      r(48, 45, 7, 7, "#ff8fc7");
     } else {
-      const swatches = [
-        ["#ff5372", 9, 13],
-        ["#58c8ff", 25, 9],
-        ["#79df7b", 41, 14],
-        ["#ffdf57", 17, 36],
-        ["#c77bff", 36, 35]
-      ];
-      swatches.forEach(([fill, x, y]) => {
-        r(x - 3, y - 3, 16, 16, "#351352");
-        r(x, y, 10, 10, fill);
-        r(x + 2, y + 2, 4, 4, "#ffffff");
-      });
-      r(28, 26, 8, 8, "#ffffff");
+      r(2, 23, 14, 18, "#351352");
+      r(48, 23, 14, 18, "#351352");
+      r(5, 26, 11, 12, "#8ee8ff");
+      r(48, 26, 11, 12, "#ff8fc7");
+      r(12, 11, 40, 42, "#351352");
+      r(16, 7, 32, 50, "#351352");
+      r(16, 15, 16, 17, "#ff5372");
+      r(32, 15, 16, 17, "#58c8ff");
+      r(16, 32, 16, 17, "#ffdf57");
+      r(32, 32, 16, 17, "#c77bff");
+      r(25, 24, 14, 16, "#ffffff");
+      r(29, 20, 6, 24, "#ffffff");
+      r(21, 29, 22, 6, "#ffffff");
     }
     this.textures.addCanvas(key, canvas);
   }
@@ -1443,7 +1460,7 @@ class CandyOrdersScene extends Phaser.Scene {
     }
     this.createConveyorUi();
 
-    this.statusText = this.add.text(132, 238, "Choose bet, then start", {
+    this.statusText = this.add.text(132, 184, "Choose bet, then start", {
       fontSize: 13,
       fontStyle: "800",
       color: "#ffffff",
@@ -1451,10 +1468,10 @@ class CandyOrdersScene extends Phaser.Scene {
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(41);
 
-    this.keyHudPanel = this.add.rectangle(W - 62, 238, 96, 28, 0x5a1020, 0.9).setStrokeStyle(3, 0xffe277, 0.85);
-    this.keyHudIcon = this.add.image(W - 96, 238, "sym-scatter");
+    this.keyHudPanel = this.add.rectangle(W - 62, 184, 96, 28, 0x5a1020, 0.9).setStrokeStyle(3, 0xffe277, 0.85);
+    this.keyHudIcon = this.add.image(W - 96, 184, "sym-scatter");
     this.keyHudIcon.setScale(27 / Math.max(this.keyHudIcon.width, this.keyHudIcon.height));
-    this.keyHudText = this.add.text(W - 58, 238, "0/3", {
+    this.keyHudText = this.add.text(W - 58, 184, "0/3", {
       fontSize: 15,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1633,7 +1650,7 @@ class CandyOrdersScene extends Phaser.Scene {
     this.boardFrameItems = [];
     const boardW = this.cell * COLS;
     const boardH = this.cell * this.rows;
-    const framePadX = this.gameMode === "free" ? 170 : 108;
+    const framePadX = this.gameMode === "free" ? 170 : 92;
     const framePadY = this.gameMode === "free" ? 176 : 112;
     const frameOffsetY = this.gameMode === "free" ? 4 : 4;
     const boardFrame = this.add.image(W / 2, this.boardY + boardH / 2 + frameOffsetY, "ui-board-frame-strawberry")
@@ -1851,12 +1868,19 @@ class CandyOrdersScene extends Phaser.Scene {
       .forEach((item) => item.setVisible(isBet));
     if (this.mainFrameArt) this.mainFrameArt.setVisible(isBet);
     [this.logoShadow, this.titleText, this.logoRibbon, this.logoSubText].forEach((item) => item.setVisible(false));
-    if (this.titleLogoArt) this.titleLogoArt.setVisible(mode === "bet" || mode === "game");
+    if (this.titleLogoArt) this.titleLogoArt.setVisible(mode === "bet");
     this.freeSceneWash.setVisible(isFree);
     this.ordersHeader.setVisible(mode === "game" || isFree);
     this.ordersHeader.setText(isFree ? "BONUS ORDERS" : "");
     this.ordersHeader.setY(isFree ? 88 : 88);
-    if (this.ordersPanelArt) this.ordersPanelArt.setVisible(mode === "game" || isFree);
+    if (this.ordersPanelArt) {
+      const conveyorMain = mode === "game" && !isFree;
+      this.ordersPanelArt
+        .setVisible(mode === "game" || isFree)
+        .setPosition(W / 2, conveyorMain ? 100 : 166)
+        .setDisplaySize(conveyorMain ? W - 2 : W - 12, conveyorMain ? 196 : 172)
+        .setDepth(conveyorMain ? 9 : 0);
+    }
     const showClassicOrders = isFree;
     this.orderRows.forEach((row) => Object.entries(row).forEach(([key, item]) => {
       if (item && item.setVisible) item.setVisible(key === "keyRewardIcon" ? false : showClassicOrders);
@@ -2476,6 +2500,13 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#351352",
       strokeThickness: 6
     }).setOrigin(0.5).setDepth(depth + 2);
+    const target = this.add.text(W / 2, 306, this.conveyorTargetLabel(order), {
+      fontSize: 14,
+      fontStyle: "900",
+      color: "#8ee8ff",
+      stroke: "#351352",
+      strokeThickness: 4
+    }).setOrigin(0.5).setDepth(depth + 2);
     const icon = this.add.image(W / 2 - 70, 347, this.conveyorIconKey(order)).setDepth(depth + 2);
     icon.setScale(58 / Math.max(icon.width, icon.height));
     const progress = Math.min(this.orderProgress(order), order.need);
@@ -2512,11 +2543,11 @@ class CandyOrdersScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(depth + 3).setInteractive({ useHandCursor: true });
     veil.on("pointerdown", () => this.closePopup());
     close.on("pointerdown", () => this.closePopup());
-    this.popup.addMultiple([veil, panel, title, icon, goal, reward, timeBg, timeBar, close]);
-    [panel, title, goal, reward, close].forEach((item) => item.setScale(0.82));
+    this.popup.addMultiple([veil, panel, title, target, icon, goal, reward, timeBg, timeBar, close]);
+    [panel, title, target, goal, reward, close].forEach((item) => item.setScale(0.82));
     const iconScale = icon.scaleX;
     icon.setScale(iconScale * 0.82);
-    this.tweens.add({ targets: [panel, title, goal, reward, close], scaleX: 1, scaleY: 1, duration: 230, ease: "Back.Out" });
+    this.tweens.add({ targets: [panel, title, target, goal, reward, close], scaleX: 1, scaleY: 1, duration: 230, ease: "Back.Out" });
     this.tweens.add({ targets: icon, scaleX: iconScale, scaleY: iconScale, duration: 230, ease: "Back.Out" });
     this.playPopSound(880);
   }
@@ -4513,14 +4544,14 @@ class CandyOrdersScene extends Phaser.Scene {
   createConveyorUi() {
     this.conveyorUiItems = [];
     CONVEYOR_LANE_Y.forEach((y, lane) => {
-      const track = this.add.rectangle(W / 2, y, W - 48, 31, 0x3a0b18, 0.42)
+      const track = this.add.rectangle(W / 2, y, W - 36, 35, 0x3a0b18, 0.42)
         .setStrokeStyle(1, lane === 1 ? 0x8ee8ff : 0xffb1d2, 0.42)
         .setDepth(14);
-      const danger = this.add.rectangle(CONVEYOR_LEFT_X + 12, y, 25, 29, 0xff3f63, 0.22)
+      const danger = this.add.rectangle(CONVEYOR_LEFT_X + 12, y, 25, 33, 0xff3f63, 0.22)
         .setStrokeStyle(2, 0xffe277, 0.52)
         .setDepth(15);
-      const exitLine = this.add.rectangle(CONVEYOR_LEFT_X + 25, y, 3, 28, 0xffe277, 0.82).setDepth(16);
-      const entryLine = this.add.rectangle(CONVEYOR_RIGHT_X - 2, y, 3, 28, 0x8ee8ff, 0.68).setDepth(16);
+      const exitLine = this.add.rectangle(CONVEYOR_LEFT_X + 25, y, 3, 32, 0xffe277, 0.82).setDepth(16);
+      const entryLine = this.add.rectangle(CONVEYOR_RIGHT_X - 2, y, 3, 32, 0x8ee8ff, 0.68).setDepth(16);
       this.conveyorUiItems.push(track, danger, exitLine, entryLine);
     });
   }
@@ -4532,26 +4563,33 @@ class CandyOrdersScene extends Phaser.Scene {
     return "sym-any-order";
   }
 
+  conveyorTargetLabel(order) {
+    if (order.kind === "color") return `${LABELS[order.type]?.toUpperCase() || "COLOR"} CANDY`;
+    if (order.kind === "chocolate") return "MAKE CHOCOLATE";
+    if (order.kind === "cascade") return "CASCADE CHAIN";
+    return "ANY CANDY";
+  }
+
   createConveyorOrderView(order) {
     const tierColors = { Easy: 0x49d6a6, Medium: 0x5bd9ff, Hard: 0xffd94c };
     const fill = order.golden ? 0x8a5e0b : 0x65162a;
     const stroke = order.golden ? 0xfff06a : (tierColors[order.tier] || 0xffb1d2);
     const container = this.add.container(order.trackX, CONVEYOR_LANE_Y[order.lane]).setDepth(24);
-    const shadow = this.add.rectangle(1, 2, 44, 31, 0x21060d, 0.8);
-    const plate = this.add.rectangle(0, 0, 44, 31, fill, 0.98).setStrokeStyle(2, stroke, 1);
-    const icon = this.add.image(-8, -3, this.conveyorIconKey(order));
-    icon.setScale(21 / Math.max(icon.width, icon.height));
-    const progress = this.add.text(10, 6, "0/0", {
-      fontSize: 8,
+    const shadow = this.add.rectangle(1, 2, 48, 34, 0x21060d, 0.8);
+    const plate = this.add.rectangle(0, 0, 48, 34, fill, 0.98).setStrokeStyle(2, stroke, 1);
+    const icon = this.add.image(-9, -3, this.conveyorIconKey(order));
+    icon.setScale(24 / Math.max(icon.width, icon.height));
+    const progress = this.add.text(11, 6, "0/0", {
+      fontSize: 9,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#351352",
       strokeThickness: 2,
       align: "center"
     }).setOrigin(0.5);
-    const barBg = this.add.rectangle(-19, 12, 38, 3, 0x220711, 0.95).setOrigin(0, 0.5);
-    const bar = this.add.rectangle(-19, 12, 38, 3, stroke, 1).setOrigin(0, 0.5);
-    const tierDot = this.add.rectangle(17, -11, 5, 5, stroke, 1).setStrokeStyle(1, 0xffffff, 0.85);
+    const barBg = this.add.rectangle(-21, 14, 42, 3, 0x220711, 0.95).setOrigin(0, 0.5);
+    const bar = this.add.rectangle(-21, 14, 42, 3, stroke, 1).setOrigin(0, 0.5);
+    const tierDot = this.add.rectangle(19, -12, 5, 5, stroke, 1).setStrokeStyle(1, 0xffffff, 0.85);
     container.add([shadow, plate, icon, progress, barBg, bar, tierDot]);
     plate.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.showConveyorOrderDetails(order.conveyorId));
     container.setScale(0.72);
