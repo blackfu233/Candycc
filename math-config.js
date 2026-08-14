@@ -46,7 +46,7 @@
     maxBonusRetriggers: 4,
     maxBonusWinMult: 1000,
     mainEasyOrderMaxMult: 11,
-    autoMoveDelayMs: 520,
+    autoMoveDelayMs: 260,
     autoStrategyWeights: {
       random: 0.70,
       special: 0.17,

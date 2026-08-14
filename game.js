@@ -744,6 +744,7 @@ class CandyOrdersScene extends Phaser.Scene {
 
   showOrderRewardSummary(completions, totalReward) {
     const coinCompletions = completions.filter((item) => item.reward > 0 && item.range);
+    const separateDraws = coinCompletions.length > 1;
     const scatterCount = completions.filter((item) => item.scatter).length;
     const boostText = coinCompletions
       .filter((item) => item.goldMult > 1 || item.boostMult > 1)
@@ -754,7 +755,7 @@ class CandyOrdersScene extends Phaser.Scene {
     const rangeMax = coinCompletions.reduce((sum, item) => sum + item.range.max, 0);
     const summaryDepth = 120;
     const veil = this.add.rectangle(W / 2, H / 2, W, H, 0x16091f, 0.56).setDepth(summaryDepth);
-    const panel = this.add.rectangle(W / 2, 430, W - 44, 224, 0x4a1a6b, 0.97).setStrokeStyle(6, 0xfff06a, 1).setDepth(summaryDepth + 1);
+    const panel = this.add.rectangle(W / 2, 430, W - 44, separateDraws ? 240 : 224, 0x4a1a6b, 0.97).setStrokeStyle(6, 0xfff06a, 1).setDepth(summaryDepth + 1);
     const topLine = this.add.rectangle(W / 2, 330, W - 84, 7, 0x8ee8ff, 1).setDepth(summaryDepth + 2);
     const title = this.add.text(W / 2, 365, completions.length > 1 ? "ORDERS COMPLETE!" : "ORDER COMPLETE!", {
       fontSize: 33,
@@ -763,28 +764,52 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#b218c9",
       strokeThickness: 8
     }).setOrigin(0.5).setDepth(summaryDepth + 3);
-    const multiplier = this.add.text(W / 2, 425, `+${totalMult}x`, {
-      fontSize: 78,
+    const multiplier = this.add.text(W / 2, separateDraws ? 468 : 425, separateDraws ? "TOTAL +0x" : `+${totalMult}x`, {
+      fontSize: separateDraws ? 42 : 78,
       fontStyle: "900",
       color: "#fff06a",
       stroke: "#b218c9",
       strokeThickness: 12
     }).setOrigin(0.5).setDepth(summaryDepth + 4);
-    const rangeText = this.add.text(W / 2, 462, `${boostText || `RANGE ${rangeMin}-${rangeMax}x`}${scatterCount ? `  +${scatterCount} SCATTER` : ""}`, {
-      fontSize: 17,
+    const rangeText = this.add.text(W / 2, separateDraws ? 497 : 462, `${separateDraws ? `${coinCompletions.length} SEPARATE DRAWS` : (boostText || `RANGE ${rangeMin}-${rangeMax}x`)}${scatterCount ? `  +${scatterCount} SCATTER` : ""}`, {
+      fontSize: separateDraws ? 14 : 17,
       fontStyle: "900",
       color: "#8ee8ff",
       stroke: "#351352",
       strokeThickness: 5
     }).setOrigin(0.5).setDepth(summaryDepth + 3);
-    const rewardText = this.add.text(W / 2, 492, `COINS +${totalReward}`, {
-      fontSize: 31,
+    const rewardText = this.add.text(W / 2, separateDraws ? 521 : 492, `COINS +${totalReward}`, {
+      fontSize: separateDraws ? 25 : 31,
       fontStyle: "900",
       color: "#ffffff",
       stroke: "#7a2d93",
       strokeThickness: 8
     }).setOrigin(0.5).setDepth(summaryDepth + 3);
-    const items = [veil, panel, topLine, title, multiplier, rangeText, rewardText];
+    const drawLabels = [];
+    const drawValues = [];
+    if (separateDraws) {
+      const spacing = coinCompletions.length === 2 ? 136 : 108;
+      const startX = W / 2 - spacing * (coinCompletions.length - 1) / 2;
+      coinCompletions.forEach((item, index) => {
+        const x = startX + index * spacing;
+        const tier = String(item.order?.tier || `ORDER ${index + 1}`).replace(/^Bonus\s+/i, "").toUpperCase();
+        drawLabels.push(this.add.text(x, 392, tier, {
+          fontSize: 12,
+          fontStyle: "900",
+          color: "#8ee8ff",
+          stroke: "#351352",
+          strokeThickness: 4
+        }).setOrigin(0.5).setDepth(summaryDepth + 4));
+        drawValues.push(this.add.text(x, 424, "?x", {
+          fontSize: coinCompletions.length === 3 ? 30 : 36,
+          fontStyle: "900",
+          color: "#fff06a",
+          stroke: "#b218c9",
+          strokeThickness: 7
+        }).setOrigin(0.5).setDepth(summaryDepth + 4));
+      });
+    }
+    const items = [veil, panel, topLine, title, multiplier, rangeText, rewardText, ...drawLabels, ...drawValues];
     items.forEach((item) => {
       item.isFxSprite = true;
       this.fxSprites.add(item);
@@ -793,30 +818,55 @@ class CandyOrdersScene extends Phaser.Scene {
     panel.setScale(0.72);
     multiplier.setScale(0.32);
     this.tweens.add({ targets: veil, alpha: 0.56, duration: 220 });
-    this.tweens.add({ targets: [panel, topLine, title, rangeText, rewardText], alpha: 1, scale: 1, duration: 320, ease: "Back.Out" });
+    this.tweens.add({
+      targets: [panel, topLine, title, rangeText, rewardText, ...drawLabels, ...drawValues],
+      alpha: 1,
+      scale: 1,
+      duration: 320,
+      ease: "Back.Out"
+    });
     this.tweens.add({ targets: multiplier, alpha: 1, scale: 1, duration: 520, ease: "Back.Out" });
-    for (let spin = 0; spin < 12; spin++) {
-      this.time.delayedCall(180 + spin * 58, () => {
-        const preview = Phaser.Math.Between(rangeMin, rangeMax);
-        multiplier.setText(`+${preview}x`);
-        this.playPopSound(780 + spin * 42);
+    if (separateDraws) {
+      coinCompletions.forEach((item, index) => {
+        for (let spin = 0; spin < 7; spin++) {
+          this.time.delayedCall(180 + index * 150 + spin * 65, () => {
+            drawValues[index].setText(`${Phaser.Math.Between(item.range.min, item.range.max)}x`);
+            this.playPopSound(760 + spin * 45 + index * 80);
+          });
+        }
+        this.time.delayedCall(720 + index * 230, () => {
+          drawValues[index].setText(`+${item.rollMult}x`).setScale(1.22);
+          this.tweens.add({ targets: drawValues[index], scale: 1, duration: 260, ease: "Back.Out" });
+          this.playUnlockSound();
+          this.burstAt(drawValues[index].x, drawValues[index].y, 0xfff06a);
+        });
       });
+    } else {
+      for (let spin = 0; spin < 12; spin++) {
+        this.time.delayedCall(180 + spin * 58, () => {
+          const preview = Phaser.Math.Between(rangeMin, rangeMax);
+          multiplier.setText(`+${preview}x`);
+          this.playPopSound(780 + spin * 42);
+        });
+      }
     }
-    this.time.delayedCall(930, () => {
-      multiplier.setText(`+${totalMult}x`);
+    this.time.delayedCall(separateDraws ? 850 + (coinCompletions.length - 1) * 230 : 930, () => {
+      multiplier.setText(separateDraws ? `TOTAL +${totalMult}x` : `+${totalMult}x`);
       this.playUnlockSound();
       this.cameras.main.shake(240, 0.008);
-      this.burstAt(W / 2, 425, 0xfff06a);
+      this.burstAt(W / 2, multiplier.y, 0xfff06a);
     });
+    const fadeDelay = separateDraws ? 2350 : (this.autoPlayEnabled ? 1450 : 2100);
     this.tweens.add({
       targets: items,
       alpha: 0,
-      delay: 2100,
-      duration: 480,
+      delay: fadeDelay,
+      duration: 420,
       ease: "Cubic.In",
       onComplete: () => items.forEach((item) => this.destroyFx(item))
     });
     for (let i = 0; i < 4; i++) this.time.delayedCall(250 + i * 260, () => this.burstAt(W / 2, 425, i % 2 ? 0xffffff : 0xfff06a));
+    return fadeDelay + 480;
   }
 
   addFxRect(x, y, w, h, color, alpha = 1) {
@@ -1726,9 +1776,9 @@ class CandyOrdersScene extends Phaser.Scene {
     this.winMeterPanel.setVisible(mode === "game");
     this.stepsText.setVisible(mode === "game");
     this.winGainText.setVisible(mode === "game");
-    this.autoButton.setVisible(mode === "game");
-    this.autoStateDot.setVisible(mode === "game");
-    this.autoButtonText.setVisible(mode === "game");
+    this.autoButton.setVisible(mode === "game" || isFree);
+    this.autoStateDot.setVisible(mode === "game" || isFree);
+    this.autoButtonText.setVisible(mode === "game" || isFree);
     [this.keyHudPanel, this.keyHudIcon, this.keyHudText].forEach((item) => item.setVisible(mode === "game"));
     this.freeUiItems.forEach((item) => item.setVisible(isFree));
     this.setBoardVisible(isGame);
@@ -1962,7 +2012,13 @@ class CandyOrdersScene extends Phaser.Scene {
 
   updateAutoUi() {
     if (!this.autoButton || !this.autoButtonText || !this.autoStateDot) return;
-    const visible = this.currentUiMode === "game" && !this.autoUiSuppressed;
+    const isFree = this.currentUiMode === "free";
+    const visible = (this.currentUiMode === "game" || isFree) && !this.autoUiSuppressed;
+    const buttonX = isFree ? 62 : W / 2;
+    const buttonY = isFree ? 96 : 670;
+    this.autoButton.setPosition(buttonX, buttonY).setDisplaySize(isFree ? 88 : 108, isFree ? 21 : 24);
+    this.autoStateDot.setPosition(buttonX - (isFree ? 31 : 39), buttonY);
+    this.autoButtonText.setPosition(buttonX + (isFree ? 6 : 7), buttonY).setFontSize(isFree ? 10 : 11);
     this.autoButton.setVisible(visible);
     this.autoStateDot.setVisible(visible);
     this.autoButtonText.setVisible(visible);
@@ -2715,7 +2771,7 @@ class CandyOrdersScene extends Phaser.Scene {
       this.statusText.setText(next ? "Auto play enabled." : "Auto play paused.");
       this.playBetSound(next ? 1 : -1, true);
     }
-    if (next) this.scheduleAutoMove(320);
+    if (next) this.scheduleAutoMove(180);
   }
 
   toggleAutoPlay() {
@@ -2730,7 +2786,7 @@ class CandyOrdersScene extends Phaser.Scene {
   scheduleAutoMove(delay = null) {
     if (!this.autoPlayEnabled || !this.sessionActive) return;
     this.clearAutoTimer();
-    const configuredDelay = Math.max(250, Number(MATH_CONFIG.autoMoveDelayMs || 520));
+    const configuredDelay = Math.max(140, Number(MATH_CONFIG.autoMoveDelayMs || 260));
     this.autoTimer = this.time.delayedCall(delay === null ? configuredDelay : delay, () => {
       this.autoTimer = null;
       this.runFlow(this.performAutoMove());
@@ -2740,7 +2796,7 @@ class CandyOrdersScene extends Phaser.Scene {
   async performAutoMove() {
     if (!this.autoPlayEnabled || !this.sessionActive) return;
     if (this.modalOpen || this.busy || this.resolvingMove || !this.inputOpen) {
-      this.scheduleAutoMove(240);
+      this.scheduleAutoMove(140);
       return;
     }
     if (this.gameMode === "main" && this.wallet < this.betAmount) {
@@ -2930,8 +2986,9 @@ class CandyOrdersScene extends Phaser.Scene {
           protectedPositions: [specialMovedPos],
           allowSpecialExpansion: false
         });
+        await this.showCreatedSpecialsBeforeSwapActivation(createdSpecials);
         await this.collapseAndFill([specialMovedPos, ...(createdSpecials || []).map(({ r, c }) => [r, c])]);
-        await this.wait(80);
+        await this.wait(this.autoPlayEnabled ? 60 : 120);
       }
       await this.activateMovedSpecials(a, b, [[r1, c1], [r2, c2]]);
     } else if (specialSwap) {
@@ -2942,6 +2999,32 @@ class CandyOrdersScene extends Phaser.Scene {
     if (this.gameMode === "free") await this.checkFreeScatterRetrigger();
     else this.checkScatterBonus();
     await this.finishMove();
+  }
+
+  async showCreatedSpecialsBeforeSwapActivation(createdSpecials = []) {
+    if (!createdSpecials.length) return;
+    await this.wait(50);
+    this.playUnlockSound();
+    for (const { r, c } of createdSpecials) {
+      const sprite = this.sprites[r]?.[c];
+      if (!sprite) continue;
+      this.burstAt(this.cellX(c), this.cellY(r), 0xfff06a);
+      sprite.getChildren()
+        .filter((child) => child.type === "Image")
+        .forEach((child) => {
+          const baseScaleX = child.scaleX;
+          const baseScaleY = child.scaleY;
+          this.tweens.add({
+            targets: child,
+            scaleX: baseScaleX * 1.22,
+            scaleY: baseScaleY * 1.22,
+            duration: 120,
+            yoyo: true,
+            ease: "Sine.Out"
+          });
+        });
+    }
+    await this.wait(this.autoPlayEnabled ? 190 : 270);
   }
 
   async activateMovedSpecials(a, b, positions) {
@@ -4398,8 +4481,8 @@ class CandyOrdersScene extends Phaser.Scene {
       this.statusText.setText("Order complete. New order ready.");
       this.playPopSound(1320);
       this.time.delayedCall(80, () => this.playPopSound(1760));
-      this.showOrderRewardSummary(this.moveCompletions, this.moveReward);
-      await this.wait(3100);
+      const summaryMs = this.showOrderRewardSummary(this.moveCompletions, this.moveReward);
+      await this.wait(summaryMs);
     } else if (this.moveCompletions.length > 0) {
       this.winText.setText(`EARNED ${this.sessionReward}`);
       this.statusText.setText("Order complete. Scatter added.");
@@ -4437,8 +4520,8 @@ class CandyOrdersScene extends Phaser.Scene {
     if (this.moveReward > 0) {
       this.winText.setText(reachedMaxWin ? `MAX WIN ${MATH_CONFIG.maxBonusWinMult}x` : `BONUS ORDER +${this.moveReward}`);
       this.statusText.setText(reachedMaxWin ? "Maximum bonus win reached." : "Bonus order complete.");
-      this.showOrderRewardSummary(this.moveCompletions, this.moveReward);
-      await this.wait(2300);
+      const summaryMs = this.showOrderRewardSummary(this.moveCompletions, this.moveReward);
+      await this.wait(summaryMs);
     } else {
       this.updateFreeUi();
     }
