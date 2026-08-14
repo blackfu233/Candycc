@@ -67,8 +67,8 @@ class CandyOrdersScene extends Phaser.Scene {
     this.load.image("sym-chest", "assets/symbols/chest.png");
     this.load.image("sym-key", "assets/symbols/key.png");
     this.load.image("sym-scatter", "assets/generated/scatter-chest-premium.png?v=20260615artapply");
-    this.load.image("ui-start-console-v2", "assets/ui-v2/start-console.png?v=20260814uiv2");
-    this.load.image("ui-logo-v2", "assets/ui-v2/logo.png?v=20260814uiv2");
+    this.load.image("ui-start-console-v2", "assets/generated/ui-start-screen-panel.png?v=20260814originalstart");
+    this.load.image("ui-logo-v2", "assets/generated/logo-candy-orders.png?v=20260814originalstart");
     this.load.image("ui-conveyor-panel-v2", "assets/ui-v2/conveyor-panel.png?v=20260814uiv2");
     this.load.image("ui-bottom-hud-v2", "assets/ui-v2/bottom-hud.png?v=20260814uiv2");
     this.load.image("ui-main-board-frame-v2", "assets/ui-v2/main-board-frame.png?v=20260814uiv2");
@@ -1279,9 +1279,9 @@ class CandyOrdersScene extends Phaser.Scene {
 
   createUi() {
     this.freeSceneWash = this.add.rectangle(W / 2, H / 2, W, H, 0x4f1220, 0.58);
-    this.mainFrameArt = this.add.image(W / 2, H / 2, "ui-start-console-v2")
-      .setDisplaySize(W - 8, H - 13)
-      .setAlpha(1)
+    this.mainFrameArt = this.add.image(W / 2, H / 2 + 8, "ui-start-console-v2")
+      .setDisplaySize(W - 18, H - 8)
+      .setAlpha(0.96)
       .setDepth(0);
     this.logoShadow = this.add.text(W / 2 + 4, 34, "CANDY", {
       fontFamily: "Trebuchet MS",
@@ -1308,8 +1308,8 @@ class CandyOrdersScene extends Phaser.Scene {
       stroke: "#4b125b",
       strokeThickness: 4
     }).setOrigin(0.5).setDepth(41);
-    this.titleLogoArt = this.add.image(W / 2, 118, "ui-logo-v2")
-      .setDisplaySize(250, 125)
+    this.titleLogoArt = this.add.image(W / 2, 66, "ui-logo-v2")
+      .setDisplaySize(230, 90)
       .setDepth(40);
     [this.logoShadow, this.titleText, this.logoRibbon, this.logoSubText].forEach((item) => item.setVisible(false));
     this.ordersHeader = this.add.text(W / 2, 88, "", {
@@ -1324,21 +1324,21 @@ class CandyOrdersScene extends Phaser.Scene {
     this.betPanel = this.add.rectangle(W / 2, 374, W - 96, 156, 0x6a1422, 0);
     this.betTopGlow = this.add.rectangle(W / 2, 289, W - 102, 8, 0x8ee8ff, 0);
     this.betBottomGlow = this.add.rectangle(W / 2, 459, W - 104, 8, 0xff8fc7, 0);
-    this.betHeaderText = this.add.text(W / 2, 305, "BET PER MOVE", {
+    this.betHeaderText = this.add.text(W / 2, 324, "SET YOUR BET", {
       fontSize: 21,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#351352",
       strokeThickness: 5
     }).setOrigin(0.5);
-    this.betHintText = this.add.text(W / 2, 326, "", {
+    this.betHintText = this.add.text(W / 2, 357, "Each move spends this amount", {
       fontSize: 13,
       fontStyle: "800",
       color: "#ffffff",
       stroke: "#351352",
       strokeThickness: 3
     }).setOrigin(0.5);
-    this.walletText = this.add.text(W / 2, 267, "", {
+    this.walletText = this.add.text(W / 2, 274, "", {
       fontSize: 18,
       fontStyle: "900",
       color: "#8ee8ff",
@@ -1347,26 +1347,26 @@ class CandyOrdersScene extends Phaser.Scene {
       align: "center"
     }).setOrigin(0.5).setDepth(71);
 
-    this.betPillShadow = this.add.rectangle(W / 2, 376, 138, 68, 0x3b0c16, 0);
-    this.betPill = this.add.rectangle(W / 2, 369, 142, 68, 0x5a1020, 0).setStrokeStyle(4, 0xffe277, 0);
-    const betMinusX = W / 2 - 116;
-    const betPlusX = W / 2 + 116;
-    this.betMinusShadow = this.add.rectangle(betMinusX, 376, 62, 58, 0x3b0c16, 0);
-    this.betMinus = this.add.rectangle(betMinusX, 369, 62, 58, 0xff4f88, 0).setStrokeStyle(4, 0xffffff, 0);
-    this.betMinusText = this.add.rectangle(betMinusX, 369, 24, 5, 0xffffff, 1).setOrigin(0.5);
-    this.betText = this.add.text(W / 2, 369, "", {
+    this.betPillShadow = this.add.rectangle(W / 2, 410, 138, 68, 0x3b0c16, 0);
+    this.betPill = this.add.rectangle(W / 2, 402, 142, 68, 0x5a1020, 0).setStrokeStyle(4, 0xffe277, 0);
+    const betMinusX = 114;
+    const betPlusX = 332;
+    this.betMinusShadow = this.add.rectangle(betMinusX, 408, 62, 58, 0x3b0c16, 0);
+    this.betMinus = this.add.rectangle(betMinusX, 400, 62, 58, 0xff4f88, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.betMinusText = this.add.rectangle(betMinusX, 402, 24, 5, 0xffffff, 1).setOrigin(0.5);
+    this.betText = this.add.text(W / 2, 402, "", {
       fontSize: 28,
       fontStyle: "900",
       color: "#fff6d0",
       stroke: "#2b1248",
       strokeThickness: 4
     }).setOrigin(0.5);
-    this.betPlusShadow = this.add.rectangle(betPlusX, 376, 62, 58, 0x3b0c16, 0);
-    this.betPlus = this.add.rectangle(betPlusX, 369, 62, 58, 0x45d66f, 0).setStrokeStyle(4, 0xffffff, 0);
-    this.betPlusText = this.add.container(betPlusX, 369);
+    this.betPlusShadow = this.add.rectangle(betPlusX, 408, 62, 58, 0x3b0c16, 0);
+    this.betPlus = this.add.rectangle(betPlusX, 400, 62, 58, 0x45d66f, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.betPlusText = this.add.container(betPlusX, 402);
     this.betPlusText.add(this.add.rectangle(0, 0, 24, 5, 0xffffff, 1).setOrigin(0.5));
     this.betPlusText.add(this.add.rectangle(0, 0, 5, 24, 0xffffff, 1).setOrigin(0.5));
-    this.betRangeText = this.add.text(W / 2, 414, `MIN ${MIN_BET}   STEP ${BET_STEP}   MAX ${MAX_BET}`, {
+    this.betRangeText = this.add.text(W / 2, 456, `MIN ${MIN_BET}   STEP ${BET_STEP}   MAX ${MAX_BET}`, {
       fontSize: 13,
       fontStyle: "900",
       color: "#fff6d0",
@@ -1476,25 +1476,25 @@ class CandyOrdersScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(41).setFixedSize(68, 22);
     this.freeUiItems.push(this.freeHudPanel, this.freeMovesText, this.freeScatterText, this.freeWinText);
 
-    this.mainButton = this.add.rectangle(W / 2, 474, 330, 82, 0xffd94c, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.mainButton = this.add.rectangle(W / 2, 526, 250, 62, 0xffd94c, 0).setStrokeStyle(4, 0xffffff, 0);
     this.mainButton.setInteractive({ useHandCursor: true });
-    this.mainLabel = this.add.text(W / 2, 474, "START", {
+    this.mainLabel = this.add.text(W / 2, 526, "START", {
       fontSize: 30,
       fontStyle: "900",
-      color: "#fff4d2",
-      stroke: "#7a1022",
-      strokeThickness: 5
+      color: "#5c1d7f",
+      stroke: "#ffffff",
+      strokeThickness: 3
     }).setOrigin(0.5);
     this.mainButton.on("pointerdown", () => {
       if (!this.busy && !this.sessionActive) this.startSession();
     });
-    this.bonusBuyButton = this.add.rectangle(W / 2, 603, 330, 82, 0x19b7d4, 0).setStrokeStyle(4, 0xffffff, 0);
+    this.bonusBuyButton = this.add.rectangle(W / 2, 627, 250, 52, 0x19b7d4, 0).setStrokeStyle(4, 0xffffff, 0);
     this.bonusBuyButton.setInteractive({ useHandCursor: true });
-    this.bonusBuyLabel = this.add.text(W / 2, 603, "", {
+    this.bonusBuyLabel = this.add.text(W / 2, 627, "", {
       fontSize: 18,
       fontStyle: "900",
       color: "#ffffff",
-      stroke: "#7a1022",
+      stroke: "#07354f",
       strokeThickness: 4
     }).setOrigin(0.5);
     this.bonusBuyButton.on("pointerdown", () => {
@@ -1904,7 +1904,7 @@ class CandyOrdersScene extends Phaser.Scene {
         ease: changed ? "Back.Out" : "Sine.Out"
       });
     });
-    this.burstAt(delta > 0 ? W / 2 + 116 : W / 2 - 116, 369, changed ? 0xffe277 : 0x8ee8ff);
+    this.burstAt(button.x, button.y, changed ? 0xffe277 : 0x8ee8ff);
   }
 
   animateWinMeter(amount) {
