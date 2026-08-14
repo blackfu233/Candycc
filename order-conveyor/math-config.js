@@ -61,7 +61,7 @@
     mainOrderChainMultipliers: [1.00, 1.25, 1.50, 2.00],
     bonusOrderChainMultipliers: [1.00, 1.50, 2.00, 3.00],
     bonusConveyorShiftPerMove: 14,
-    bonusConveyorOrdersPerLane: 4,
+    bonusConveyorOrdersPerLane: [5, 4, 3],
     conveyorTierTickets: [
       { label: "Easy", weight: 48 },
       { label: "Medium", weight: 36 },

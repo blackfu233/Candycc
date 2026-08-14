@@ -2343,11 +2343,18 @@ class CandyOrdersScene extends Phaser.Scene {
 
   conveyorOrderWidth(order) {
     const tierKey = String(order?.tier || "Easy").replace(/^Bonus\s+/i, "");
-    const tierBase = { Easy: 62, Medium: 72, Hard: 82 }[tierKey] || 66;
-    const kindBonus = { any: 3, cascade: 5, combo: 5, chocolate: 7 }[order?.kind] || 0;
+    const tierBase = { Easy: 66, Medium: 84, Hard: 108 }[tierKey] || 72;
+    const kindBonus = { any: 4, cascade: 7, combo: 10, chocolate: 16 }[order?.kind] || 0;
     const need = Number(order?.need || 0);
-    const needBonus = need >= 150 ? 7 : need >= 90 ? 5 : need >= 48 ? 4 : need >= 28 ? 2 : 0;
-    return Phaser.Math.Clamp(tierBase + kindBonus + needBonus, 62, 94);
+    const needBonus = need >= 260 ? 8 : need >= 140 ? 6 : need >= 75 ? 5 : need >= 35 ? 4 : need >= 18 ? 2 : 0;
+    const variation = need > 0 ? (Math.abs(Math.round(need)) % 5) - 2 : 0;
+    return Phaser.Math.Clamp(tierBase + kindBonus + needBonus + variation, 66, 124);
+  }
+
+  bonusConveyorTargetCount(lane) {
+    const configured = MATH_CONFIG.bonusConveyorOrdersPerLane;
+    const value = Array.isArray(configured) ? configured[lane] : configured;
+    return Math.max(2, Number(value || 4));
   }
 
   generateOrders() {
@@ -2358,10 +2365,10 @@ class CandyOrdersScene extends Phaser.Scene {
     const cardGap = 6;
     for (let lane = 0; lane < 3; lane++) {
       let rightEdge = W - 21;
-      for (let index = 0; index < 5; index++) {
+      for (let index = 0; index < 6; index++) {
         const order = this.createConveyorOrder(lane, 0);
         const leftEdge = rightEdge - order.cardWidth;
-        if (index >= 4 && leftEdge < CONVEYOR_LEFT_X - 8) break;
+        if (index >= 3 && leftEdge < CONVEYOR_LEFT_X + 2) break;
         order.trackX = rightEdge - order.cardWidth / 2;
         this.orders.push(order);
         rightEdge = leftEdge - cardGap;
@@ -2400,7 +2407,8 @@ class CandyOrdersScene extends Phaser.Scene {
       ? [0, 1, 2].map((offset) => (this.conveyorSpawnLane + offset) % 3)
       : [preferredLane];
     const cardGap = 6;
-    const candidateLeft = trackX - 47;
+    const order = this.createConveyorOrder(0, trackX);
+    const candidateLeft = trackX - order.cardWidth / 2;
     let lane = null;
     for (const candidate of laneOrder) {
       const rightmostEdge = this.orders
@@ -2412,7 +2420,7 @@ class CandyOrdersScene extends Phaser.Scene {
       }
     }
     if (lane === null) return null;
-    const order = this.createConveyorOrder(lane, trackX);
+    order.lane = lane;
     this.orders.push(order);
     this.conveyorSpawnLane = (lane + 1) % 3;
     if (this.currentUiMode === "game") this.createConveyorOrderView(order);
@@ -2449,7 +2457,7 @@ class CandyOrdersScene extends Phaser.Scene {
   }
 
   spawnBonusConveyorOrder(lane) {
-    const targetCount = Math.max(2, Number(MATH_CONFIG.bonusConveyorOrdersPerLane || 4));
+    const targetCount = this.bonusConveyorTargetCount(lane);
     const laneOrders = this.orders.filter((order) => order.scope === "free" && order.lane === lane);
     if (laneOrders.length >= targetCount) return null;
     const rightEdge = W - 21;
@@ -2457,9 +2465,10 @@ class CandyOrdersScene extends Phaser.Scene {
       (max, order) => Math.max(max, order.trackX + Number(order.cardWidth || 62) / 2),
       -Infinity
     );
-    if (Number.isFinite(rightmostEdge) && rightmostEdge > rightEdge - 100) return null;
     const tier = ["Bonus Easy", "Bonus Medium", "Bonus Hard"][lane] || "Bonus Easy";
     const order = this.createFreeOrder(tier, lane, 0);
+    const candidateLeft = rightEdge - order.cardWidth;
+    if (Number.isFinite(rightmostEdge) && candidateLeft - rightmostEdge < 6) return null;
     order.trackX = rightEdge - order.cardWidth / 2;
     this.orders.push(order);
     if (this.currentUiMode === "free") this.createConveyorOrderView(order);
@@ -2642,14 +2651,14 @@ class CandyOrdersScene extends Phaser.Scene {
     this.conveyorOrderSequence = 0;
     this.conveyorSpawnLane = 0;
     const cardGap = 6;
-    const ordersPerLane = Math.max(2, Number(MATH_CONFIG.bonusConveyorOrdersPerLane || 4));
     const tiers = ["Bonus Easy", "Bonus Medium", "Bonus Hard"];
     for (let lane = 0; lane < 3; lane++) {
       let rightEdge = W - 21;
+      const ordersPerLane = this.bonusConveyorTargetCount(lane);
       for (let index = 0; index < ordersPerLane; index++) {
         const order = this.createFreeOrder(tiers[lane], lane, 0);
         const leftEdge = rightEdge - order.cardWidth;
-        if (index >= 3 && leftEdge < CONVEYOR_LEFT_X - 8) break;
+        if (index >= 2 && leftEdge < CONVEYOR_LEFT_X + 2) break;
         order.trackX = rightEdge - order.cardWidth / 2;
         this.orders.push(order);
         rightEdge = leftEdge - cardGap;
