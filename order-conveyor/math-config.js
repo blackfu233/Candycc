@@ -13,10 +13,10 @@
     scatterGoal: 3,
     mainScatterPerMoveRate: 0.003,
     mainScatterIntervalBands: [
-      { label: "Quick", weight: 15, min: 20, max: 80 },
-      { label: "Normal", weight: 35, min: 81, max: 220 },
-      { label: "Slow", weight: 35, min: 221, max: 480 },
-      { label: "Long tail", weight: 15, min: 481, max: 900 }
+      { label: "Quick", weight: 25, min: 15, max: 50 },
+      { label: "Normal", weight: 40, min: 51, max: 130 },
+      { label: "Slow", weight: 25, min: 131, max: 280 },
+      { label: "Long tail", weight: 10, min: 281, max: 600 }
     ],
     mainSpecialDropPerMoveRate: 0.00,
     refillMatchSuppressionMinRate: 0.05,
@@ -38,8 +38,8 @@
     bonusStartMoves: 15,
     bonusRetriggerMoves: 15,
     bonusBuyCostMult: 100,
-    mainPayoutScale: 0.73,
-    freePayoutScale: 1.08,
+    mainPayoutScale: 0.52,
+    freePayoutScale: 0.54,
     orderMultiplierSpread: 0.50,
     mainOrderMultiplierSpread: 0.75,
     freeOrderMultiplierSpread: 0.50,
@@ -48,24 +48,45 @@
     mainEasyOrderMaxMult: 11,
     autoMoveDelayMs: 260,
     autoStrategyWeights: {
-      random: 0.70,
-      special: 0.17,
-      order: 0.13
+      random: 0.74,
+      special: 0.15,
+      order: 0.11
     },
     conveyorShiftPerBet: 18,
+    conveyorSpawnPerBetChance: 0.70,
     conveyorMinimumGap: 52,
     conveyorMaxActiveOrders: 21,
     conveyorRushChance: 0.08,
     conveyorGoldenChance: 0.045,
-    conveyorScatterRewardChance: 0.035,
-    mainOrderChainMultipliers: [1.00, 1.25, 1.50, 2.00],
+    conveyorScatterRewardChance: 0.055,
+    mainOrderChainMultipliers: [1.00, 1.20, 1.40, 1.80],
     bonusOrderChainMultipliers: [1.00, 1.50, 2.00, 3.00],
+    conveyorMainPayoutTickets: [
+      [
+        { label: "Standard", weight: 96.2, minFactor: 0.80, maxFactor: 1.20 },
+        { label: "Sweet", weight: 0.5, minFactor: 3.00, maxFactor: 4.00 },
+        { label: "Big", weight: 3.2, minFactor: 10.00, maxFactor: 10.00 },
+        { label: "Mega", weight: 0.1, minFactor: 40.00, maxFactor: 60.00 }
+      ],
+      [
+        { label: "Standard", weight: 92.25, minFactor: 0.50, maxFactor: 0.70 },
+        { label: "Sweet", weight: 5.25, minFactor: 2.50, maxFactor: 4.50 },
+        { label: "Big", weight: 2.05, minFactor: 10.00, maxFactor: 20.00 },
+        { label: "Mega", weight: 0.45, minFactor: 30.00, maxFactor: 60.00 }
+      ],
+      [
+        { label: "Standard", weight: 83.8, minFactor: 0.70, maxFactor: 1.30 },
+        { label: "Sweet", weight: 10.8, minFactor: 2.50, maxFactor: 5.00 },
+        { label: "Big", weight: 4.6, minFactor: 8.00, maxFactor: 18.00 },
+        { label: "Mega", weight: 0.8, minFactor: 35.00, maxFactor: 70.00 }
+      ]
+    ],
     bonusConveyorShiftPerMove: 14,
     bonusConveyorOrdersPerLane: [5, 4, 3],
     conveyorTierTickets: [
       { label: "Easy", weight: 48 },
-      { label: "Medium", weight: 36 },
-      { label: "Hard", weight: 16 }
+      { label: "Medium", weight: 32 },
+      { label: "Hard", weight: 20 }
     ],
     conveyorOrderPools: [
       [
@@ -73,15 +94,15 @@
         { kind: "any", needMin: 48, needMax: 72, multMin: 1, multMax: 2 }
       ],
       [
-        { kind: "color", needMin: 28, needMax: 46, multMin: 2, multMax: 4 },
-        { kind: "any", needMin: 90, needMax: 135, multMin: 2, multMax: 4 },
-        { kind: "cascade", needMin: 7, needMax: 12, multMin: 3, multMax: 5 }
+        { kind: "color", needMin: 22, needMax: 38, multMin: 4, multMax: 6 },
+        { kind: "any", needMin: 72, needMax: 110, multMin: 4, multMax: 6 },
+        { kind: "cascade", needMin: 6, needMax: 10, multMin: 5, multMax: 7 }
       ],
       [
-        { kind: "color", needMin: 48, needMax: 78, multMin: 4, multMax: 7 },
-        { kind: "any", needMin: 155, needMax: 235, multMin: 4, multMax: 7 },
-        { kind: "cascade", needMin: 14, needMax: 22, multMin: 5, multMax: 8 },
-        { kind: "chocolate", needMin: 2, needMax: 4, multMin: 6, multMax: 10 }
+        { kind: "color", needMin: 22, needMax: 40, multMin: 8, multMax: 12 },
+        { kind: "any", needMin: 76, needMax: 128, multMin: 8, multMax: 12 },
+        { kind: "cascade", needMin: 7, needMax: 12, multMin: 10, multMax: 14 },
+        { kind: "chocolate", needMin: 1, needMax: 2, multMin: 12, multMax: 18 }
       ]
     ],
     bonusConveyorOrderPools: [
@@ -103,25 +124,25 @@
     ],
     bonusConveyorPayoutTickets: [
       [
-        { label: "Standard", weight: 95.00, min: 2, max: 4 },
-        { label: "Sweet", weight: 4.00, min: 8, max: 16 },
-        { label: "Big", weight: 0.80, min: 35, max: 80 },
-        { label: "Mega", weight: 0.18, min: 100, max: 250 },
-        { label: "Max", weight: 0.02, min: 500, max: 1000 }
+        { label: "Standard", weight: 98.574, min: 2, max: 2 },
+        { label: "Sweet", weight: 0.10, min: 10, max: 20 },
+        { label: "Big", weight: 0.05, min: 50, max: 120 },
+        { label: "Mega", weight: 0.10, min: 300, max: 500 },
+        { label: "Max", weight: 1.176, min: 340, max: 440 }
       ],
       [
-        { label: "Standard", weight: 92.00, min: 5, max: 9 },
-        { label: "Sweet", weight: 6.00, min: 15, max: 30 },
-        { label: "Big", weight: 1.60, min: 50, max: 120 },
-        { label: "Mega", weight: 0.35, min: 150, max: 400 },
-        { label: "Max", weight: 0.05, min: 600, max: 1000 }
+        { label: "Standard", weight: 97.857, min: 4, max: 5 },
+        { label: "Sweet", weight: 0.10, min: 20, max: 40 },
+        { label: "Big", weight: 0.05, min: 80, max: 180 },
+        { label: "Mega", weight: 0.10, min: 350, max: 900 },
+        { label: "Max", weight: 1.893, min: 425, max: 625 }
       ],
       [
-        { label: "Standard", weight: 87.00, min: 10, max: 18 },
-        { label: "Sweet", weight: 9.00, min: 25, max: 60 },
-        { label: "Big", weight: 3.00, min: 80, max: 180 },
-        { label: "Mega", weight: 0.90, min: 250, max: 600 },
-        { label: "Max", weight: 0.10, min: 700, max: 1000 }
+        { label: "Standard", weight: 96.869, min: 7, max: 9 },
+        { label: "Sweet", weight: 0.10, min: 40, max: 90 },
+        { label: "Big", weight: 0.05, min: 120, max: 300 },
+        { label: "Mega", weight: 0.10, min: 450, max: 1100 },
+        { label: "Max", weight: 2.881, min: 617, max: 917 }
       ]
     ],
     mainOrderNeedBands: [
