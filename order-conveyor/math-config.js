@@ -13,10 +13,10 @@
     scatterGoal: 3,
     mainScatterPerMoveRate: 0.003,
     mainScatterIntervalBands: [
-      { label: "Quick", weight: 25, min: 15, max: 50 },
-      { label: "Normal", weight: 40, min: 51, max: 130 },
-      { label: "Slow", weight: 25, min: 131, max: 280 },
-      { label: "Long tail", weight: 10, min: 281, max: 600 }
+      { label: "Quick", weight: 25, min: 12, max: 45 },
+      { label: "Normal", weight: 40, min: 46, max: 115 },
+      { label: "Slow", weight: 25, min: 116, max: 255 },
+      { label: "Long tail", weight: 10, min: 256, max: 550 }
     ],
     mainSpecialDropPerMoveRate: 0.00,
     refillMatchSuppressionMinRate: 0.05,
@@ -39,13 +39,13 @@
     bonusRetriggerMoves: 15,
     bonusBuyCostMult: 100,
     mainPayoutScale: 0.52,
-    freePayoutScale: 0.54,
+    freePayoutScale: 0.235,
     orderMultiplierSpread: 0.50,
     mainOrderMultiplierSpread: 0.75,
     freeOrderMultiplierSpread: 0.50,
     maxBonusRetriggers: 4,
     maxBonusWinMult: 1000,
-    mainEasyOrderMaxMult: 11,
+    mainEasyOrderMaxMult: 80,
     autoMoveDelayMs: 260,
     autoStrategyWeights: {
       random: 0.74,
@@ -63,22 +63,25 @@
     bonusOrderChainMultipliers: [1.00, 1.50, 2.00, 3.00],
     conveyorMainPayoutTickets: [
       [
-        { label: "Standard", weight: 96.2, minFactor: 0.80, maxFactor: 1.20 },
-        { label: "Sweet", weight: 0.5, minFactor: 3.00, maxFactor: 4.00 },
-        { label: "Big", weight: 3.2, minFactor: 10.00, maxFactor: 10.00 },
+        { label: "Small", weight: 93.9, minFactor: 1.00, maxFactor: 1.00 },
+        { label: "Standard", weight: 1.0, minFactor: 2.00, maxFactor: 2.00 },
+        { label: "Sweet", weight: 1.0, minFactor: 4.00, maxFactor: 6.00 },
+        { label: "Big", weight: 4.0, minFactor: 10.00, maxFactor: 10.00 },
         { label: "Mega", weight: 0.1, minFactor: 40.00, maxFactor: 60.00 }
       ],
       [
-        { label: "Standard", weight: 92.25, minFactor: 0.50, maxFactor: 0.70 },
-        { label: "Sweet", weight: 5.25, minFactor: 2.50, maxFactor: 4.50 },
-        { label: "Big", weight: 2.05, minFactor: 10.00, maxFactor: 20.00 },
-        { label: "Mega", weight: 0.45, minFactor: 30.00, maxFactor: 60.00 }
+        { label: "Small", weight: 91.0, minFactor: 0.40, maxFactor: 0.80 },
+        { label: "Standard", weight: 5.0, minFactor: 3.00, maxFactor: 5.00 },
+        { label: "Sweet", weight: 2.0, minFactor: 6.00, maxFactor: 9.00 },
+        { label: "Big", weight: 1.8, minFactor: 12.00, maxFactor: 20.00 },
+        { label: "Mega", weight: 0.2, minFactor: 40.00, maxFactor: 60.00 }
       ],
       [
-        { label: "Standard", weight: 83.8, minFactor: 0.70, maxFactor: 1.30 },
-        { label: "Sweet", weight: 10.8, minFactor: 2.50, maxFactor: 5.00 },
-        { label: "Big", weight: 4.6, minFactor: 8.00, maxFactor: 18.00 },
-        { label: "Mega", weight: 0.8, minFactor: 35.00, maxFactor: 70.00 }
+        { label: "Small", weight: 75.0, minFactor: 0.40, maxFactor: 0.80 },
+        { label: "Standard", weight: 14.0, minFactor: 2.00, maxFactor: 3.50 },
+        { label: "Sweet", weight: 7.0, minFactor: 4.00, maxFactor: 6.00 },
+        { label: "Big", weight: 3.5, minFactor: 10.00, maxFactor: 18.00 },
+        { label: "Mega", weight: 0.5, minFactor: 35.00, maxFactor: 60.00 }
       ]
     ],
     bonusConveyorShiftPerMove: 14,
@@ -124,25 +127,25 @@
     ],
     bonusConveyorPayoutTickets: [
       [
-        { label: "Standard", weight: 98.574, min: 2, max: 2 },
-        { label: "Sweet", weight: 0.10, min: 10, max: 20 },
-        { label: "Big", weight: 0.05, min: 50, max: 120 },
-        { label: "Mega", weight: 0.10, min: 300, max: 500 },
-        { label: "Max", weight: 1.176, min: 340, max: 440 }
+        { label: "Standard", weight: 96.5, min: 8, max: 10 },
+        { label: "Sweet", weight: 2.0, min: 20, max: 30 },
+        { label: "Big", weight: 0.6, min: 80, max: 140 },
+        { label: "Mega", weight: 0.4, min: 300, max: 500 },
+        { label: "Max", weight: 0.5, min: 900, max: 1000 }
       ],
       [
-        { label: "Standard", weight: 97.857, min: 4, max: 5 },
-        { label: "Sweet", weight: 0.10, min: 20, max: 40 },
-        { label: "Big", weight: 0.05, min: 80, max: 180 },
-        { label: "Mega", weight: 0.10, min: 350, max: 900 },
-        { label: "Max", weight: 1.893, min: 425, max: 625 }
+        { label: "Standard", weight: 95.0, min: 14, max: 18 },
+        { label: "Sweet", weight: 2.5, min: 30, max: 50 },
+        { label: "Big", weight: 1.0, min: 100, max: 180 },
+        { label: "Mega", weight: 0.5, min: 350, max: 600 },
+        { label: "Max", weight: 1.0, min: 900, max: 1000 }
       ],
       [
-        { label: "Standard", weight: 96.869, min: 7, max: 9 },
-        { label: "Sweet", weight: 0.10, min: 40, max: 90 },
-        { label: "Big", weight: 0.05, min: 120, max: 300 },
-        { label: "Mega", weight: 0.10, min: 450, max: 1100 },
-        { label: "Max", weight: 2.881, min: 617, max: 917 }
+        { label: "Standard", weight: 92.2, min: 22, max: 30 },
+        { label: "Sweet", weight: 4.0, min: 45, max: 75 },
+        { label: "Big", weight: 1.5, min: 120, max: 220 },
+        { label: "Mega", weight: 0.8, min: 400, max: 700 },
+        { label: "Max", weight: 1.5, min: 900, max: 1000 }
       ]
     ],
     mainOrderNeedBands: [
