@@ -44,7 +44,7 @@
     mainOrderMultiplierSpread: 0.75,
     freeOrderMultiplierSpread: 0.50,
     maxBonusRetriggers: 4,
-    maxBonusWinMult: 1000,
+    maxBonusWinMult: 10000,
     mainEasyOrderMaxMult: 80,
     autoMoveDelayMs: 260,
     autoStrategyWeights: {
@@ -127,25 +127,28 @@
     ],
     bonusConveyorPayoutTickets: [
       [
-        { label: "Standard", weight: 96.5, min: 8, max: 10 },
+        { label: "Standard", weight: 96.5891, min: 8, max: 10 },
         { label: "Sweet", weight: 2.0, min: 20, max: 30 },
         { label: "Big", weight: 0.6, min: 80, max: 140 },
         { label: "Mega", weight: 0.4, min: 300, max: 500 },
-        { label: "Max", weight: 0.5, min: 900, max: 1000 }
+        { label: "Max", weight: 0.39, min: 900, max: 1000 },
+        { label: "Ultra", weight: 0.0209, min: 4400, max: 5600 }
       ],
       [
-        { label: "Standard", weight: 95.0, min: 14, max: 18 },
+        { label: "Standard", weight: 95.1782, min: 14, max: 18 },
         { label: "Sweet", weight: 2.5, min: 30, max: 50 },
         { label: "Big", weight: 1.0, min: 100, max: 180 },
         { label: "Mega", weight: 0.5, min: 350, max: 600 },
-        { label: "Max", weight: 1.0, min: 900, max: 1000 }
+        { label: "Max", weight: 0.78, min: 900, max: 1000 },
+        { label: "Ultra", weight: 0.0418, min: 4400, max: 5600 }
       ],
       [
-        { label: "Standard", weight: 92.2, min: 22, max: 30 },
+        { label: "Standard", weight: 92.4673, min: 22, max: 30 },
         { label: "Sweet", weight: 4.0, min: 45, max: 75 },
         { label: "Big", weight: 1.5, min: 120, max: 220 },
         { label: "Mega", weight: 0.8, min: 400, max: 700 },
-        { label: "Max", weight: 1.5, min: 900, max: 1000 }
+        { label: "Max", weight: 1.17, min: 900, max: 1000 },
+        { label: "Ultra", weight: 0.0627, min: 4400, max: 5600 }
       ]
     ],
     mainOrderNeedBands: [
