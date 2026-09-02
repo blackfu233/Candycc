@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="../">
+  <title>Golden Candy - Visual Regression Fixture</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    #test-panel { position: fixed; z-index: 10; top: 0; left: 0; max-width: 100%; background: #151515ee; color: #eee; font: 12px/1.5 monospace; padding: 8px; box-sizing: border-box; }
+    #test-results { margin: 0; white-space: pre-wrap; max-height: 170px; overflow: auto; }
+    button { margin: 4px 2px 0 0; padding: 6px; cursor: pointer; }
+  </style>
+  <script src="vendor/phaser.min.js?v=3.80.1"></script>
+</head>
+<body>
+  <main id="shell"><div id="game"></div></main>
+  <aside id="test-panel">
+    <pre id="test-results">TEST FIXTURE ONLY - loading...</pre>
+    <button id="test-run" disabled>Run regression checks</button>
+    <button id="test-main" disabled>Main shapes</button>
+    <button id="test-bonus" disabled>Bonus shapes</button>
+  </aside>
+  <script src="math-config.js?v=20260902goldenmath1"></script>
+  <script src="game.js?v=20260902goldenmath1"></script>
+  <script src="tests/golden-visuals.js"></script>
+</body>
+</html>
