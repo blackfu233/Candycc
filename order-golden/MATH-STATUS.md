@@ -1,5 +1,17 @@
 # Golden Candy Math Status
 
+Current release: `goldenbonusrefresh1`, 2026-09-03. Playtest prototype; post-fix RTP has not been validated.
+
+## Bonus order refresh correction
+
+- Completed Bonus orders now refresh independently into new orders of the same tier. Unfinished orders retain their progress.
+- Replacements start at the current counters, with fresh payout tickets and without the completed order's gold/discount state. Earlier clears do not count again toward the new order.
+- Existing award settlement, payout tickets, Bonus cap, retrigger moves and restoration of main orders are unchanged. Refreshing itself costs no extra bet or move.
+- This corrects the disabled `freeOrdersRefreshOnComplete` setting. It changes the number of earning opportunities, so the September 2 and September 3 `goldenmath1` RTP reports are historical evidence only, not post-fix RTP estimates. No compensating payout reduction was made.
+- Regression fixture: [Bonus order checks](tests/bonus-orders.html). The fixture uses controlled completions and is separate from normal play; it is not an RTP simulation.
+
+## Historical baseline: goldenmath1
+
 Version: `goldenmath1`, 2026-09-02. Playtest prototype, not a real-money release or a certified 95% RTP configuration.
 
 ## Changes

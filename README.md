@@ -4,7 +4,7 @@ Two independent playable editions are included:
 
 | Edition | Entry | Status |
 | --- | --- | --- |
-| Fixed orders with checkpoints and golden candies | [index.html](index.html) or [order-golden/index.html](order-golden/index.html) | Default; `goldenmath1` playtest prototype |
+| Fixed orders with checkpoints and golden candies | [index.html](index.html) or [order-golden/index.html](order-golden/index.html) | Default; `goldenbonusrefresh1` playtest prototype |
 | Original fixed orders | [fixed-orders.html](fixed-orders.html) | Original game preserved |
 
 Serve this repository with a static web server. The root URL redirects to `/order-golden/`, preserving query parameters and the URL fragment. Use `/fixed-orders.html` to play the original. Each edition has its own game code, math config and assets. No build step or external asset CDN is required.

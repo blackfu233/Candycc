@@ -37,7 +37,7 @@
     ],
     bonusStartMoves: 15,
     bonusRetriggerMoves: 15,
-    freeOrdersRefreshOnComplete: false,
+    freeOrdersRefreshOnComplete: true,
     freeOrdersRefreshOnRetrigger: true,
     bonusBuyCostMult: 100,
     mainPayoutScale: 0.65,
