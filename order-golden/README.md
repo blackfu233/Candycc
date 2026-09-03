@@ -2,7 +2,7 @@
 
 This folder is an isolated prototype derived from the checkpoint-order game.
 
-- The repository root remains the original fixed-order edition.
+- The repository root now opens this edition. The original remains at `fixed-orders.html`.
 - Earlier conveyor work is kept separately; this release does not replace it.
 - The local checkpoint-only experiment is not overwritten or required by this folder.
 - This edition adds persistent golden candies with randomized reveal strength.
@@ -17,7 +17,7 @@ Golden candies can appear from ordinary paid moves, replace some checkpoint even
 
 ## Play and math status
 
-Open `order-golden/index.html` through a static web server. All game assets are local to this folder; the simulator is not part of this release. Opening the repository root still starts the original fixed-order edition.
+Open the repository root or `order-golden/index.html` through a static web server. All game assets are local to this folder; the simulator is not part of this release. Use `fixed-orders.html` at the repository root to play the original fixed-order edition.
 
 Version `goldenmath1` adds tier-specific payout tickets and upgrade chances, more short-order tickets, and less extreme long targets for Medium/Hard orders. Golden candy arrival/reveal probabilities and Bonus payouts are unchanged. Rewards are sampled when the order completes; the reveal animation does not reroll them.
 
